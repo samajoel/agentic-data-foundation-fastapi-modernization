@@ -7,7 +7,6 @@ set "ROOT_DIR=%~dp0.."
 set "AZURE_FOLDER=%ROOT_DIR%\.azure"
 set "CONFIG_FILE=%AZURE_FOLDER%\config.json"
 set "API_PYTHON_ENV_FILE=%ROOT_DIR%\src\api\python\.env"
-set "API_DOTNET_DIR=%ROOT_DIR%\src\api\dotnet"
 
 REM ============================================================
 REM  Locate .env file (Azure deployment or local fallback)
@@ -39,32 +38,14 @@ set "ENV_FILE=%AZURE_FOLDER%\%DEFAULT_ENV%\.env"
 if exist "%ENV_FILE%" (
     echo Found .env file in Azure deployment folder: %ENV_FILE%
 
-    REM Pre-check backend runtime stack from Azure .env
-    set "_PRE_STACK="
-    for /f "tokens=1,* delims==" %%A in ('findstr /b "BACKEND_RUNTIME_STACK=" "%ENV_FILE%"') do set "_PRE_STACK=%%~B"
-
-    REM Check if backend config already exists and ask for overwrite
-    if /i "!_PRE_STACK!"=="dotnet" (
-        if exist "%API_DOTNET_DIR%\appsettings.json" (
-            echo Found existing appsettings.json in src\api\dotnet
-            set /p OVERWRITE_ENV="Do you want to overwrite it with the Azure deployment .env? (y/N): "
-            if /i "!OVERWRITE_ENV!" neq "y" (
-                echo Preserving existing appsettings.json. Using local configuration.
-                set "SKIP_DOTNET_CONFIG=true"
-            ) else (
-                echo Overwriting with Azure deployment configuration...
-            )
-        )
-    ) else (
-        if exist "%API_PYTHON_ENV_FILE%" (
-            echo Found existing .env file in src\api\python
-            set /p OVERWRITE_ENV="Do you want to overwrite it with the Azure deployment .env? (y/N): "
-            if /i "!OVERWRITE_ENV!"=="y" (
-                echo Overwriting with Azure deployment configuration...
-            ) else (
-                echo Preserving existing .env files. Using local configuration.
-                set "ENV_FILE=%API_PYTHON_ENV_FILE%"
-            )
+    if exist "%API_PYTHON_ENV_FILE%" (
+        echo Found existing .env file in src\api\python
+        set /p OVERWRITE_ENV="Do you want to overwrite it with the Azure deployment .env? (y/N): "
+        if /i "!OVERWRITE_ENV!"=="y" (
+            echo Overwriting with Azure deployment configuration...
+        ) else (
+            echo Preserving existing .env files. Using local configuration.
+            set "ENV_FILE=%API_PYTHON_ENV_FILE%"
         )
     )
     goto :setup_environment
@@ -107,7 +88,6 @@ REM ============================================================
 for /f "tokens=1,* delims==" %%A in ('type "%ENV_FILE%"') do (
     if "%%A"=="AZURE_RESOURCE_GROUP" set "AZURE_RESOURCE_GROUP=%%~B"
     if "%%A"=="AZURE_COSMOSDB_ACCOUNT" set "AZURE_COSMOSDB_ACCOUNT=%%~B"
-    if "%%A"=="BACKEND_RUNTIME_STACK" set "BACKEND_RUNTIME_STACK=%%~B"
     if "%%A"=="IS_WORKSHOP" set "IS_WORKSHOP=%%~B"
     if "%%A"=="AZURE_ENV_ONLY" set "AZURE_ENV_ONLY=%%~B"
     if "%%A"=="AGENT_NAME_CHAT" set "AGENT_NAME_CHAT=%%~B"
@@ -172,12 +152,8 @@ if not defined USE_CHAT_HISTORY_ENABLED (
     if /i "!USE_CHAT_HISTORY_ENABLED!"=="true" (set "USE_CHAT_HISTORY_ENABLED=true") else (set "USE_CHAT_HISTORY_ENABLED=false")
 )
 
-REM Default backend to python if not set
-if not defined BACKEND_RUNTIME_STACK set "BACKEND_RUNTIME_STACK=python"
-
 echo.
 echo Configuration:
-echo   BACKEND_RUNTIME_STACK=%BACKEND_RUNTIME_STACK%
 echo   IS_WORKSHOP=%IS_WORKSHOP%
 echo   AZURE_ENV_ONLY=%AZURE_ENV_ONLY%
 echo   USE_CHAT_HISTORY_ENABLED=%USE_CHAT_HISTORY_ENABLED%
@@ -229,73 +205,30 @@ REM  Configure backend .env / appsettings
 REM ============================================================
 
 REM --- Python backend configuration ---
-if /i "%BACKEND_RUNTIME_STACK%"=="python" (
-    REM Guard: skip copy when source and destination are the same file
-    for %%I in ("%ENV_FILE%") do set "ENV_FILE_RESOLVED=%%~fI"
-    for %%I in ("%API_PYTHON_ENV_FILE%") do set "API_PYTHON_ENV_FILE_RESOLVED=%%~fI"
-    if /i "!ENV_FILE_RESOLVED!"=="!API_PYTHON_ENV_FILE_RESOLVED!" (
-        echo Python .env source and destination are the same file; skipping copy.
-    ) else (
-        copy /Y "%ENV_FILE%" "%API_PYTHON_ENV_FILE%" >nul
-    )
-
-    if defined AGENT_NAME_CHAT (
-        call :upsert_env "AGENT_NAME_CHAT" "!AGENT_NAME_CHAT!" "%API_PYTHON_ENV_FILE%"
-        call :upsert_env "AGENT_NAME_TITLE" "!AGENT_NAME_TITLE!" "%API_PYTHON_ENV_FILE%"
-    )
-    REM Upsert Fabric SQL settings when needed
-    if "%USE_FABRIC_SQL%"=="true" if defined FABRIC_SQL_SERVER (
-        call :upsert_env "FABRIC_SQL_SERVER" "!FABRIC_SQL_SERVER!" "%API_PYTHON_ENV_FILE%"
-        call :upsert_env "FABRIC_SQL_DATABASE" "!FABRIC_SQL_DATABASE!" "%API_PYTHON_ENV_FILE%"
-    )
-
-    REM Add or update APP_ENV=dev in python .env file
-    call :upsert_env "APP_ENV" "dev" "%API_PYTHON_ENV_FILE%"
-    echo Configured src\api\python\.env
+REM Guard: skip copy when source and destination are the same file
+for %%I in ("%ENV_FILE%") do set "ENV_FILE_RESOLVED=%%~fI"
+for %%I in ("%API_PYTHON_ENV_FILE%") do set "API_PYTHON_ENV_FILE_RESOLVED=%%~fI"
+if /i "!ENV_FILE_RESOLVED!"=="!API_PYTHON_ENV_FILE_RESOLVED!" (
+    echo Python .env source and destination are the same file; skipping copy.
+) else (
+    copy /Y "%ENV_FILE%" "%API_PYTHON_ENV_FILE%" >nul
 )
 
-REM --- Dotnet backend configuration ---
-if /i "%BACKEND_RUNTIME_STACK%"=="dotnet" if exist "%API_DOTNET_DIR%" (
-    if /i "!SKIP_DOTNET_CONFIG!"=="true" (
-        echo Preserving existing src\api\dotnet\appsettings.json
-    ) else (
-        REM Validate template file exists
-        if not exist "!API_DOTNET_DIR!\appsettings.json.sample" (
-            echo ERROR: Missing required template file "!API_DOTNET_DIR!\appsettings.json.sample"
-            exit /b 1
-        )
-        REM Build appsettings.json from env values using PowerShell
-        echo Generating src\api\dotnet\appsettings.json from environment values...
-
-        powershell -command ^
-            "$json = Get-Content '!API_DOTNET_DIR!\appsettings.json.sample' -Raw | ConvertFrom-Json;" ^
-            "$json.'FABRIC_SQL_CONNECTION_STRING' = '!FABRIC_SQL_CONNECTION_STRING!';" ^
-            "$json.'FABRIC_SQL_DATABASE' = '!FABRIC_SQL_DATABASE!';" ^
-            "$json.'FABRIC_SQL_SERVER' = '!FABRIC_SQL_SERVER!';" ^
-            "$json.'APP_ENV' = 'dev';" ^
-            "$json.'AGENT_NAME_CHAT' = '!AGENT_NAME_CHAT!';" ^
-            "$json.'AGENT_NAME_TITLE' = '!AGENT_NAME_TITLE!';" ^
-            "$json.'API_UID' = '!API_UID!';" ^
-            "$json.'APPINSIGHTS_INSTRUMENTATIONKEY' = '!APPINSIGHTS_INSTRUMENTATIONKEY!';" ^
-            "$json.'APPLICATIONINSIGHTS_CONNECTION_STRING' = '!APPLICATIONINSIGHTS_CONNECTION_STRING!';" ^
-            "$json.'AZURE_AI_AGENT_API_VERSION' = '!AZURE_AI_AGENT_API_VERSION!';" ^
-            "$json.'AZURE_AI_AGENT_ENDPOINT' = '!AZURE_AI_AGENT_ENDPOINT!';" ^
-            "$json.'AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME' = '!AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME!';" ^
-            "$json.'AZURE_ENV_OPENAI_API_VERSION' = '!AZURE_ENV_OPENAI_API_VERSION!';" ^
-            "$json.'AZURE_ENV_GPT_MODEL_NAME' = '!AZURE_ENV_GPT_MODEL_NAME!';" ^
-            "$json.'AZURE_OPENAI_ENDPOINT' = '!AZURE_OPENAI_ENDPOINT!';" ^
-            "$json.'AZURE_OPENAI_RESOURCE' = '!AZURE_OPENAI_RESOURCE!';" ^
-            "$json.'DISPLAY_CHART_DEFAULT' = '!DISPLAY_CHART_DEFAULT!';" ^
-            "$json.'SOLUTION_NAME' = '!SOLUTION_NAME!';" ^
-            "$json.'USE_AI_PROJECT_CLIENT' = '!USE_AI_PROJECT_CLIENT!';" ^
-            "$json.'USE_CHAT_HISTORY_ENABLED' = '!USE_CHAT_HISTORY_ENABLED!';" ^
-            "$json | ConvertTo-Json -Depth 10 | Set-Content '!API_DOTNET_DIR!\appsettings.json' -Encoding UTF8"
-
-        echo Configured src\api\dotnet\appsettings.json with environment values
-    )
+if defined AGENT_NAME_CHAT (
+    call :upsert_env "AGENT_NAME_CHAT" "!AGENT_NAME_CHAT!" "%API_PYTHON_ENV_FILE%"
+    call :upsert_env "AGENT_NAME_TITLE" "!AGENT_NAME_TITLE!" "%API_PYTHON_ENV_FILE%"
+)
+REM Upsert Fabric SQL settings when needed
+if "%USE_FABRIC_SQL%"=="true" if defined FABRIC_SQL_SERVER (
+    call :upsert_env "FABRIC_SQL_SERVER" "!FABRIC_SQL_SERVER!" "%API_PYTHON_ENV_FILE%"
+    call :upsert_env "FABRIC_SQL_DATABASE" "!FABRIC_SQL_DATABASE!" "%API_PYTHON_ENV_FILE%"
 )
 
-REM Set process env vars for local development (dotnet inherits these via IConfiguration)
+REM Add or update APP_ENV=dev in python .env file
+call :upsert_env "APP_ENV" "dev" "%API_PYTHON_ENV_FILE%"
+echo Configured src\api\python\.env
+
+REM Set process env vars for local development
 set "APP_ENV=dev"
 
 REM ============================================================
@@ -408,48 +341,36 @@ echo [INFO] No AI Foundry resource configured, skipping AI User role assignment.
 REM ============================================================
 REM  Restore and start backend
 REM ============================================================
-if /i "%BACKEND_RUNTIME_STACK%"=="dotnet" (
-    echo.
-    echo Restoring dotnet backend packages...
-    cd "%ROOT_DIR%\src\api\dotnet"
-    call dotnet restore --verbosity quiet
+echo.
+REM Create virtual environment if it doesn't exist
+cd "%ROOT_DIR%"
+if not exist ".venv" (
+    echo Creating Python virtual environment...
+    call python -m venv .venv
     if errorlevel 1 (
-        echo Failed to restore dotnet backend packages
+        echo Failed to create virtual environment
         exit /b 1
     )
-    cd "%ROOT_DIR%"
+    echo Virtual environment created successfully.
 ) else (
-    echo.
-    REM Create virtual environment if it doesn't exist
-    cd "%ROOT_DIR%"
-    if not exist ".venv" (
-        echo Creating Python virtual environment...
-        call python -m venv .venv
-        if errorlevel 1 (
-            echo Failed to create virtual environment
-            exit /b 1
-        )
-        echo Virtual environment created successfully.
-    ) else (
-        echo Virtual environment already exists.
-    )
-
-    REM Activate virtual environment and install packages
-    echo Activating virtual environment and installing backend packages...
-    call .venv\Scripts\activate.bat
-    call python -m pip install --upgrade pip --quiet
-    call python -m pip install uv --quiet
-    cd "%ROOT_DIR%\src\api\python"
-    call python -m uv pip install -r requirements.txt
-    if errorlevel 1 (
-        echo Failed to restore backend Python packages
-        call deactivate
-        exit /b 1
-    )
-    echo Backend Python packages installed successfully.
-    call deactivate
-    cd "%ROOT_DIR%"
+    echo Virtual environment already exists.
 )
+
+REM Activate virtual environment and install packages
+echo Activating virtual environment and installing backend packages...
+call .venv\Scripts\activate.bat
+call python -m pip install --upgrade pip --quiet
+call python -m pip install uv --quiet
+cd "%ROOT_DIR%\src\api\python"
+call python -m uv pip install -r requirements.txt
+if errorlevel 1 (
+    echo Failed to restore backend Python packages
+    call deactivate
+    exit /b 1
+)
+echo Backend Python packages installed successfully.
+call deactivate
+cd "%ROOT_DIR%"
 
 REM Restore frontend packages
 echo Restoring frontend npm packages...
@@ -479,17 +400,11 @@ for %%P in (8000 3000) do (
 
 REM Start backend in background, frontend in foreground (single terminal window)
 echo.
-if /i "%BACKEND_RUNTIME_STACK%"=="dotnet" (
-    echo Starting dotnet backend...
-    cd "%ROOT_DIR%\src\api\dotnet"
-    start /b dotnet run --urls=http://127.0.0.1:8000
-) else (
-    echo Starting Python backend...
-    cd "%ROOT_DIR%"
-    call .venv\Scripts\activate.bat
-    cd src\api\python
-    start /b python app.py --port=8000
-)
+echo Starting Python backend...
+cd "%ROOT_DIR%"
+call .venv\Scripts\activate.bat
+cd src\api\python
+start /b python app.py --port=8000
 echo Backend started at http://127.0.0.1:8000
 
 echo Waiting for backend to initialize...

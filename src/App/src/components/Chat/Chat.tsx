@@ -318,7 +318,7 @@ const Chat: React.FC<ChatProps> = ({
                   const delta = parsed?.choices?.[0]?.delta;
                   const legacyMsg = parsed?.choices?.[0]?.messages?.[0];
                   // Delta format (Python workshop) yields incremental fragments;
-                  // messages format (Python non-workshop, dotnet) yields the full accumulated text each time.
+                  // messages format (Python non-workshop) yields the full accumulated text each time.
                   if (delta) {
                     const role = delta.role;
                     const content = delta.content;

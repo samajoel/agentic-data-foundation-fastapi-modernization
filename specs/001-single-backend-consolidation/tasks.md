@@ -28,7 +28,7 @@ it is the non-negotiable outcome gate — if it fails, the consolidation is not 
 
 **Purpose**: Establish a passing baseline before any file is changed.
 
-- [ ] T001 Run `pytest -m unittest` from repo root and record the passing test count as the baseline that must be matched at T018
+- [X] T001 Run `pytest -m unittest` from repo root and record the passing test count as the baseline that must be matched at T018
 
 **Checkpoint**: Baseline recorded. Proceed to removal phases.
 
@@ -45,21 +45,21 @@ returns zero results.
 
 ### Source removal for User Story 2
 
-- [ ] T002 [P] [US2] Delete the entire `src/api/dotnet/` directory and all its contents (~30 source, test, and build files)
+- [X] T002 [P] [US2] Delete the entire `src/api/dotnet/` directory and all its contents (~30 source, test, and build files)
 
 ### Infrastructure file deletion for User Story 2
 
-- [ ] T003 [P] [US2] Delete `infra/deploy_backend_csapi_docker.bicep` (Container App deployment module for .NET image `da-api-dotnet`)
-- [ ] T004 [P] [US2] Delete `infra/deploy_csapi_app_service.bicep` (App Service deployment module for .NET backend)
-- [ ] T005 [P] [US2] Delete `infra/csapi.parameters.json` (parameter file for .NET App Service deployment)
+- [X] T003 [P] [US2] Delete `infra/deploy_backend_csapi_docker.bicep` (Container App deployment module for .NET image `da-api-dotnet`)
+- [X] T004 [P] [US2] Delete `infra/deploy_csapi_app_service.bicep` (App Service deployment module for .NET backend)
+- [X] T005 [P] [US2] Delete `infra/csapi.parameters.json` (parameter file for .NET App Service deployment)
 
 ### Infrastructure file edits for User Story 2
 
-- [ ] T006 [P] [US2] Edit `infra/main.bicep`: remove the `backendRuntimeStack` allowed-values parameter (~line 25–27), remove the `backend_csapi_docker` conditional module block (~line 307–370), replace the `APP_API_BASE_URL` ternary expression (~line 368) with a direct reference to `backend_docker!.outputs.appUrl`, replace the `API_APP_NAME` ternary output (~line 425) with a direct reference to `backend_docker!.outputs.appName`, and remove the `BACKEND_RUNTIME_STACK` output (~line 475–476)
-- [ ] T007 [P] [US2] Edit `infra/main_custom.bicep`: apply the same changes as T006 targeting `backend_custom` (not `backend_docker`) — remove `backendRuntimeStack` parameter, `backend_csapi_docker` module block, ternary expressions for `APP_API_BASE_URL` (~line 351) and `API_APP_NAME` (~line 406), and `BACKEND_RUNTIME_STACK` output (~line 453–454)
-- [ ] T008 [P] [US2] Edit `infra/main.parameters.json`: remove the `backendRuntimeStack` parameter entry (~line 38)
-- [ ] T009 [US2] Regenerate `infra/main.json` after T006, T007, and T008 are complete: run `az bicep build --file infra/main.bicep --outfile infra/main.json` from repo root; if `az bicep` CLI is unavailable, manually remove the `dotnet` conditional resource block (~lines 3765–3919) and the `backendRuntimeStack` parameter from `infra/main.json`
-- [ ] T010 [US2] Verify: run `grep -r "dotnet\|CsApi\|csapi\|backendRuntimeStack" infra/ src/` from repo root and confirm zero results
+- [X] T006 [P] [US2] Edit `infra/main.bicep`: remove the `backendRuntimeStack` allowed-values parameter (~line 25–27), remove the `backend_csapi_docker` conditional module block (~line 307–370), replace the `APP_API_BASE_URL` ternary expression (~line 368) with a direct reference to `backend_docker!.outputs.appUrl`, replace the `API_APP_NAME` ternary output (~line 425) with a direct reference to `backend_docker!.outputs.appName`, and remove the `BACKEND_RUNTIME_STACK` output (~line 475–476)
+- [X] T007 [P] [US2] Edit `infra/main_custom.bicep`: apply the same changes as T006 targeting `backend_custom` (not `backend_docker`) — remove `backendRuntimeStack` parameter, `backend_csapi_docker` module block, ternary expressions for `APP_API_BASE_URL` (~line 351) and `API_APP_NAME` (~line 406), and `BACKEND_RUNTIME_STACK` output (~line 453–454)
+- [X] T008 [P] [US2] Edit `infra/main.parameters.json`: remove the `backendRuntimeStack` parameter entry (~line 38)
+- [X] T009 [US2] Regenerate `infra/main.json` after T006, T007, and T008 are complete: run `az bicep build --file infra/main.bicep --outfile infra/main.json` from repo root; if `az bicep` CLI is unavailable, manually remove the `dotnet` conditional resource block (~lines 3765–3919) and the `backendRuntimeStack` parameter from `infra/main.json`
+- [X] T010 [US2] Verify: run `grep -r "dotnet\|CsApi\|csapi\|backendRuntimeStack" infra/ src/` from repo root and confirm zero results
 
 **Checkpoint**: User Story 2 complete — repository contains no .NET backend artifacts. US2 acceptance test passes.
 
@@ -76,16 +76,16 @@ returns zero results.
 
 ### Documentation deletion for User Story 3
 
-- [ ] T011 [P] [US3] Delete `documents/CopilotStudioDeployment.md`
-- [ ] T012 [P] [US3] Delete the entire `documents/Images/cps/` directory and all 16 image files it contains (create-data-agent.png and 15 microsoft-copilot-studio-*.png files)
-- [ ] T013 [P] [US3] Delete `documents/Images/ReadMe/solution-architecture-cps.png`
+- [X] T011 [P] [US3] Delete `documents/CopilotStudioDeployment.md`
+- [X] T012 [P] [US3] Delete the entire `documents/Images/cps/` directory and all 16 image files it contains (create-data-agent.png and 15 microsoft-copilot-studio-*.png files)
+- [X] T013 [P] [US3] Delete `documents/Images/ReadMe/solution-architecture-cps.png`
 
 ### Documentation edits for User Story 3
 
-- [ ] T014 [P] [US3] Edit `README.md`: remove the "Microsoft Fabric and Microsoft Copilot Studio:" section heading, its architecture diagram (`![image](./documents/Images/ReadMe/solution-architecture-cps.png)`), and any surrounding prose specific to that architecture path (~line 29)
-- [ ] T015 [P] [US3] Edit `documents/TechnicalArchitecture.md`: remove the CPS architecture diagram section — the heading and `![image](./Images/ReadMe/solution-architecture-cps.png)` reference (~line 7) and any associated prose
-- [ ] T016 [P] [US3] Edit `documents/DeploymentGuide.md`: (a) remove the "Backend Programming Language" table row that mentions `python` or `dotnet` (~line 150); (b) remove the prose and command `azd env set BACKEND_RUNTIME_STACK dotnet` and its surrounding section (~lines 216–219); (c) remove the `.NET (dotnet)` deployment option section (~line 243); (d) remove the `CopilotStudioDeployment` link and its deployment step reference (~line 374)
-- [ ] T017 [US3] Verify: run `grep -ri "copilot\|CopilotStudio\|cps\|solution-architecture-cps" documents/ README.md` from repo root and confirm zero results
+- [X] T014 [P] [US3] Edit `README.md`: remove the "Microsoft Fabric and Microsoft Copilot Studio:" section heading, its architecture diagram (`![image](./documents/Images/ReadMe/solution-architecture-cps.png)`), and any surrounding prose specific to that architecture path (~line 29)
+- [X] T015 [P] [US3] Edit `documents/TechnicalArchitecture.md`: remove the CPS architecture diagram section — the heading and `![image](./Images/ReadMe/solution-architecture-cps.png)` reference (~line 7) and any associated prose
+- [X] T016 [P] [US3] Edit `documents/DeploymentGuide.md`: (a) remove the "Backend Programming Language" table row that mentions `python` or `dotnet` (~line 150); (b) remove the prose and command `azd env set BACKEND_RUNTIME_STACK dotnet` and its surrounding section (~lines 216–219); (c) remove the `.NET (dotnet)` deployment option section (~line 243); (d) remove the `CopilotStudioDeployment` link and its deployment step reference (~line 374)
+- [X] T017 [US3] Verify: run `grep -ri "copilot\|CopilotStudio\|cps\|solution-architecture-cps" documents/ README.md` from repo root and confirm zero results
 
 **Checkpoint**: User Story 3 complete — repository describes only the Fabric and Foundry architecture path. US3 acceptance test passes.
 
@@ -104,8 +104,8 @@ baseline from T001 must match.
 
 ### Validation for User Story 1
 
-- [ ] T018 [US1] Run `pytest -m unittest` from repo root and confirm all tests that passed in T001 still pass with no new failures
-- [ ] T019 [US1] Run `flake8 src/api/python/` and confirm no new linting violations beyond any that pre-existed before this consolidation
+- [X] T018 [US1] Run `pytest -m unittest` from repo root and confirm all tests that passed in T001 still pass with no new failures
+- [X] T019 [US1] Run `flake8 src/api/python/` and confirm no new linting violations beyond any that pre-existed before this consolidation
 - [ ] T020 [US1] Start the Python backend locally: `cd src/api/python && python app.py`; confirm the server starts on port 8000 with no startup errors
 - [ ] T021 [US1] Smoke test `GET /health`: run `curl http://127.0.0.1:8000/health` and confirm response is `{"status":"healthy"}`
 - [ ] T022 [US1] Smoke test `POST /api/chat`: run `curl -X POST http://127.0.0.1:8000/api/chat -H "Content-Type: application/json" -d '{"conversation_id":"test-001","messages":[{"role":"user","content":"Hello"}]}'` and confirm a streaming response is returned (no 404, 500, or connection error)
@@ -119,8 +119,8 @@ baseline from T001 must match.
 
 **Purpose**: Catch any orphaned references or broken links introduced by the removals.
 
-- [ ] T024 [P] Scan all remaining Markdown files in `documents/` for broken image links: `grep -r "!\[" documents/ README.md | grep "cps\|solution-architecture-cps"` must return zero results
-- [ ] T025 [P] Confirm `documents/DeploymentGuide.md` has no broken section cross-references after edits: read the file and confirm all remaining internal links resolve to sections that still exist
+- [X] T024 [P] Scan all remaining Markdown files in `documents/` for broken image links: `grep -r "!\[" documents/ README.md | grep "cps\|solution-architecture-cps"` must return zero results
+- [X] T025 [P] Confirm `documents/DeploymentGuide.md` has no broken section cross-references after edits: read the file and confirm all remaining internal links resolve to sections that still exist
 - [ ] T026 Run full quickstart validation from `specs/001-single-backend-consolidation/quickstart.md` as a final end-to-end check
 
 ---

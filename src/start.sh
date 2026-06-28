@@ -8,7 +8,6 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 AZURE_FOLDER="$ROOT_DIR/.azure"
 CONFIG_FILE="$AZURE_FOLDER/config.json"
 API_PYTHON_ENV_FILE="$ROOT_DIR/src/api/python/.env"
-API_DOTNET_DIR="$ROOT_DIR/src/api/dotnet"
 
 # ============================================================
 #  Locate .env file (Azure deployment or local fallback)
@@ -44,34 +43,14 @@ locate_env_file() {
     if [ -f "$ENV_FILE" ]; then
         echo "Found .env file in Azure deployment folder: $ENV_FILE"
 
-        # Pre-check backend runtime stack from Azure .env
-        _PRE_STACK=$(grep -m1 '^BACKEND_RUNTIME_STACK=' "$ENV_FILE" | cut -d'=' -f2-)
-        # Strip surrounding quotes from value
-        _PRE_STACK="${_PRE_STACK%\"}"
-        _PRE_STACK="${_PRE_STACK#\"}"
-
-        # Check if backend config already exists and ask for overwrite
-        if [ "${_PRE_STACK,,}" = "dotnet" ]; then
-            if [ -f "$API_DOTNET_DIR/appsettings.json" ]; then
-                echo "Found existing appsettings.json in src/api/dotnet"
-                read -p "Do you want to overwrite it with the Azure deployment .env? (y/N): " OVERWRITE_ENV
-                if [[ "$OVERWRITE_ENV" =~ ^[Yy]$ ]]; then
-                    echo "Overwriting with Azure deployment configuration..."
-                else
-                    echo "Preserving existing appsettings.json. Using local configuration."
-                    SKIP_DOTNET_CONFIG="true"
-                fi
-            fi
-        else
-            if [ -f "$API_PYTHON_ENV_FILE" ]; then
-                echo "Found existing .env file in src/api/python"
-                read -p "Do you want to overwrite it with the Azure deployment .env? (y/N): " OVERWRITE_ENV
-                if [[ "$OVERWRITE_ENV" =~ ^[Yy]$ ]]; then
-                    echo "Overwriting with Azure deployment configuration..."
-                else
-                    echo "Preserving existing .env files. Using local configuration."
-                    ENV_FILE="$API_PYTHON_ENV_FILE"
-                fi
+        if [ -f "$API_PYTHON_ENV_FILE" ]; then
+            echo "Found existing .env file in src/api/python"
+            read -p "Do you want to overwrite it with the Azure deployment .env? (y/N): " OVERWRITE_ENV
+            if [[ "$OVERWRITE_ENV" =~ ^[Yy]$ ]]; then
+                echo "Overwriting with Azure deployment configuration..."
+            else
+                echo "Preserving existing .env files. Using local configuration."
+                ENV_FILE="$API_PYTHON_ENV_FILE"
             fi
         fi
         return
@@ -115,7 +94,7 @@ echo "Using environment file: $ENV_FILE"
 
 # ============================================================
 #  Load all variables from .env as process env vars
-#  This ensures Python/dotnet subprocesses inherit them
+#  This ensures Python subprocesses inherit them
 #  (fixes history.py reading env vars before load_dotenv)
 # ============================================================
 while IFS='=' read -r key value; do
@@ -146,12 +125,8 @@ AZURE_ENV_ONLY=$(echo "${AZURE_ENV_ONLY:-false}" | tr '[:upper:]' '[:lower:]')
 USE_CHAT_HISTORY_ENABLED=$(echo "${USE_CHAT_HISTORY_ENABLED:-true}" | tr '[:upper:]' '[:lower:]')
 export USE_CHAT_HISTORY_ENABLED
 
-# Default backend to python if not set
-BACKEND_RUNTIME_STACK="${BACKEND_RUNTIME_STACK:-python}"
-
 echo ""
 echo "Configuration:"
-echo "  BACKEND_RUNTIME_STACK=$BACKEND_RUNTIME_STACK"
 echo "  IS_WORKSHOP=$IS_WORKSHOP"
 echo "  AZURE_ENV_ONLY=$AZURE_ENV_ONLY"
 echo "  USE_CHAT_HISTORY_ENABLED=$USE_CHAT_HISTORY_ENABLED"
@@ -203,92 +178,41 @@ else
 fi
 
 # ============================================================
-#  Configure backend .env / appsettings
+#  Configure backend .env
 # ============================================================
 
-# --- Python backend configuration ---
-if [ "$BACKEND_RUNTIME_STACK" = "python" ]; then
-    # Guard: skip copy when source and destination are the same file
-    if [ "$(realpath "$ENV_FILE")" = "$(realpath "$API_PYTHON_ENV_FILE")" ]; then
-        echo "Using existing src/api/python/.env"
-    else
-        cp "$ENV_FILE" "$API_PYTHON_ENV_FILE"
-    fi
-
-    # Upsert helper: update existing key or append if not present
-    upsert_env() {
-        local key="$1" val="$2" file="$3"
-        if grep -qi "^${key}=" "$file" 2>/dev/null; then
-            sed -i.bak "s/^${key}=.*/${key}=${val}/" "$file" && rm -f "${file}.bak"
-        else
-            echo "${key}=${val}" >> "$file"
-        fi
-    }
-
-    if [ -n "$AGENT_NAME_CHAT" ]; then
-        upsert_env "AGENT_NAME_CHAT" "$AGENT_NAME_CHAT" "$API_PYTHON_ENV_FILE"
-        upsert_env "AGENT_NAME_TITLE" "$AGENT_NAME_TITLE" "$API_PYTHON_ENV_FILE"
-    fi
-    # Upsert Fabric SQL settings when needed
-    if [ "$USE_FABRIC_SQL" = "true" ] && [ -n "$FABRIC_SQL_SERVER" ]; then
-        upsert_env "FABRIC_SQL_SERVER" "$FABRIC_SQL_SERVER" "$API_PYTHON_ENV_FILE"
-        upsert_env "FABRIC_SQL_DATABASE" "$FABRIC_SQL_DATABASE" "$API_PYTHON_ENV_FILE"
-    fi
-
-    # Add or update APP_ENV=dev
-    upsert_env "APP_ENV" "dev" "$API_PYTHON_ENV_FILE"
-    echo "Configured src/api/python/.env"
+# Guard: skip copy when source and destination are the same file
+if [ "$(realpath "$ENV_FILE")" = "$(realpath "$API_PYTHON_ENV_FILE")" ]; then
+    echo "Using existing src/api/python/.env"
+else
+    cp "$ENV_FILE" "$API_PYTHON_ENV_FILE"
 fi
 
-# --- Dotnet backend configuration ---
-if [ "$BACKEND_RUNTIME_STACK" = "dotnet" ] && [ -d "$API_DOTNET_DIR" ]; then
-    if [ "$SKIP_DOTNET_CONFIG" = "true" ]; then
-        echo "Preserving existing src/api/dotnet/appsettings.json"
+# Upsert helper: update existing key or append if not present
+upsert_env() {
+    local key="$1" val="$2" file="$3"
+    if grep -qi "^${key}=" "$file" 2>/dev/null; then
+        sed -i.bak "s/^${key}=.*/${key}=${val}/" "$file" && rm -f "${file}.bak"
     else
-        # Generate appsettings.json from sample with env values populated
-        echo "Generating src/api/dotnet/appsettings.json from environment values..."
-        if [ -f "$API_DOTNET_DIR/appsettings.json.sample" ]; then
-            python3 -c "
-import json, os, sys
-
-with open('$API_DOTNET_DIR/appsettings.json.sample', 'r') as f:
-    config = json.load(f)
-
-env_keys = [
-    'FABRIC_SQL_CONNECTION_STRING', 'FABRIC_SQL_DATABASE', 'FABRIC_SQL_SERVER',
-    'AGENT_NAME_CHAT', 'AGENT_NAME_TITLE', 'API_UID',
-    'APPINSIGHTS_INSTRUMENTATIONKEY', 'APPLICATIONINSIGHTS_CONNECTION_STRING',
-    'AZURE_AI_AGENT_API_VERSION', 'AZURE_AI_AGENT_ENDPOINT', 'AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME',
-    'AZURE_ENV_OPENAI_API_VERSION', 'AZURE_ENV_GPT_MODEL_NAME', 'AZURE_OPENAI_ENDPOINT',
-    'AZURE_OPENAI_RESOURCE', 'DISPLAY_CHART_DEFAULT', 'SOLUTION_NAME',
-    'USE_AI_PROJECT_CLIENT', 'USE_CHAT_HISTORY_ENABLED'
-]
-
-# Fallback mappings: new_key -> old_key (for backward compatibility)
-fallback_keys = {
-    'AZURE_ENV_GPT_MODEL_NAME': 'AZURE_OPENAI_DEPLOYMENT_MODEL',
-    'AZURE_ENV_OPENAI_API_VERSION': 'AZURE_OPENAI_API_VERSION'
+        echo "${key}=${val}" >> "$file"
+    fi
 }
 
-for key in env_keys:
-    val = os.environ.get(key, '')
-    # Try fallback if primary key is empty
-    if not val and key in fallback_keys:
-        val = os.environ.get(fallback_keys[key], '')
-    if val or key in config:
-        config[key] = val
-
-config['APP_ENV'] = 'dev'
-
-with open('$API_DOTNET_DIR/appsettings.json', 'w') as f:
-    json.dump(config, f, indent=2)
-"
-        fi
-        echo "Configured src/api/dotnet/appsettings.json with environment values"
-    fi
+if [ -n "$AGENT_NAME_CHAT" ]; then
+    upsert_env "AGENT_NAME_CHAT" "$AGENT_NAME_CHAT" "$API_PYTHON_ENV_FILE"
+    upsert_env "AGENT_NAME_TITLE" "$AGENT_NAME_TITLE" "$API_PYTHON_ENV_FILE"
+fi
+# Upsert Fabric SQL settings when needed
+if [ "$USE_FABRIC_SQL" = "true" ] && [ -n "$FABRIC_SQL_SERVER" ]; then
+    upsert_env "FABRIC_SQL_SERVER" "$FABRIC_SQL_SERVER" "$API_PYTHON_ENV_FILE"
+    upsert_env "FABRIC_SQL_DATABASE" "$FABRIC_SQL_DATABASE" "$API_PYTHON_ENV_FILE"
 fi
 
-# Set process env vars for local development (dotnet inherits these via IConfiguration)
+# Add or update APP_ENV=dev
+upsert_env "APP_ENV" "dev" "$API_PYTHON_ENV_FILE"
+echo "Configured src/api/python/.env"
+
+# Set process env vars for local development
 export APP_ENV="dev"
 export USE_CHAT_HISTORY_ENABLED
 if [ -n "$AGENT_NAME_CHAT" ]; then
@@ -399,35 +323,27 @@ fi
 # ============================================================
 #  Restore and start backend
 # ============================================================
-if [ "$BACKEND_RUNTIME_STACK" = "dotnet" ]; then
-    echo ""
-    echo "Restoring dotnet backend packages..."
-    cd "$ROOT_DIR/src/api/dotnet"
-    dotnet restore --verbosity quiet || { echo "Failed to restore dotnet backend packages"; exit 1; }
-    cd "$ROOT_DIR"
+echo ""
+# Create virtual environment if it doesn't exist
+cd "$ROOT_DIR"
+if [ ! -d ".venv" ]; then
+    echo "Creating Python virtual environment..."
+    python3 -m venv .venv || { echo "Failed to create virtual environment"; exit 1; }
+    echo "Virtual environment created successfully."
 else
-    echo ""
-    # Create virtual environment if it doesn't exist
-    cd "$ROOT_DIR"
-    if [ ! -d ".venv" ]; then
-        echo "Creating Python virtual environment..."
-        python3 -m venv .venv || { echo "Failed to create virtual environment"; exit 1; }
-        echo "Virtual environment created successfully."
-    else
-        echo "Virtual environment already exists."
-    fi
-
-    # Activate virtual environment and install packages
-    echo "Activating virtual environment and installing backend packages..."
-    source .venv/bin/activate
-    python -m pip install --upgrade pip --quiet
-    python -m pip install uv --quiet
-    cd "$ROOT_DIR/src/api/python"
-    python -m uv pip install -r requirements.txt || { echo "Failed to restore backend Python packages"; deactivate; exit 1; }
-    echo "Backend Python packages installed successfully."
-    deactivate
-    cd "$ROOT_DIR"
+    echo "Virtual environment already exists."
 fi
+
+# Activate virtual environment and install packages
+echo "Activating virtual environment and installing backend packages..."
+source .venv/bin/activate
+python -m pip install --upgrade pip --quiet
+python -m pip install uv --quiet
+cd "$ROOT_DIR/src/api/python"
+python -m uv pip install -r requirements.txt || { echo "Failed to restore backend Python packages"; deactivate; exit 1; }
+echo "Backend Python packages installed successfully."
+deactivate
+cd "$ROOT_DIR"
 
 # Restore frontend packages
 echo "Restoring frontend npm packages..."
@@ -462,19 +378,12 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo ""
-if [ "$BACKEND_RUNTIME_STACK" = "dotnet" ]; then
-    echo "Starting dotnet backend..."
-    cd "$ROOT_DIR/src/api/dotnet"
-    dotnet run --urls=http://127.0.0.1:8000 &
-    BACKEND_PID=$!
-else
-    echo "Starting Python backend..."
-    cd "$ROOT_DIR"
-    source .venv/bin/activate
-    cd src/api/python
-    python app.py --port=8000 &
-    BACKEND_PID=$!
-fi
+echo "Starting Python backend..."
+cd "$ROOT_DIR"
+source .venv/bin/activate
+cd src/api/python
+python app.py --port=8000 &
+BACKEND_PID=$!
 echo "Backend started at http://127.0.0.1:8000"
 
 echo "Waiting for backend to initialize..."

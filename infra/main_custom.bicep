@@ -30,12 +30,6 @@ param azureExistingAIProjectResourceId string = ''
 @description('Optional. created by user name')
 param createdBy string = !empty(deployer().?userPrincipalName ?? '') ? split(deployer().userPrincipalName, '@')[0] : !empty(deployer().?objectId ?? '') ? deployer().objectId : 'unknown-deployer'
 
-@description('Choose the programming language:')
-@allowed([
-  'python'
-  'dotnet'
-])
-param backendRuntimeStack string = 'python'
 
 @minLength(1)
 @description('Industry use case for deployment:')
@@ -234,7 +228,7 @@ var resolvedLogAnalyticsWorkspaceId = !empty(existingLogAnalyticsWorkspaceId)
   : '/subscriptions/${aifoundry.outputs.logAnalyticsWorkspaceSubscription}/resourceGroups/${aifoundry.outputs.logAnalyticsWorkspaceResourceGroup}/providers/Microsoft.OperationalInsights/workspaces/${aifoundry.outputs.logAnalyticsWorkspaceResourceName}'
 
 // ========== Backend Deployment (Python) ========== //
-module backend_custom 'deploy_backend_custom.bicep' = if (shouldDeployApp && backendRuntimeStack == 'python') {
+module backend_custom 'deploy_backend_custom.bicep' = if (shouldDeployApp) {
   name: 'deploy_backend_custom'
   params: {
     name: 'api-${solutionSuffix}'
@@ -288,53 +282,6 @@ module backend_custom 'deploy_backend_custom.bicep' = if (shouldDeployApp && bac
   scope: resourceGroup(resourceGroup().name)
 }
 
-// ========== Backend Deployment (C#) ========== //
-// C# backend continues to use the Docker-based deployment module.
-module backend_csapi_docker 'deploy_backend_csapi_docker.bicep' = if (shouldDeployApp && backendRuntimeStack == 'dotnet') {
-  name: 'deploy_backend_csapi_docker'
-  params: {
-    name: 'api-cs-${solutionSuffix}'
-    solutionLocation: solutionLocation
-    imageTag: 'latest_v2'
-    acrName: 'dataagentscontainerreg'
-    appServicePlanId: hostingplan!.outputs.name
-    applicationInsightsId: aifoundry.outputs.applicationInsightsId
-    userassignedIdentityId: managedIdentityModule.outputs.managedIdentityBackendAppOutput.id
-    aiServicesName: aifoundry.outputs.aiServicesName
-    azureExistingAIProjectResourceId: azureExistingAIProjectResourceId
-    appSettings: {
-      AZURE_ENV_GPT_MODEL_NAME: gptModelName
-      AZURE_ENV_EMBEDDING_DEPLOYMENT_NAME: embeddingModel
-      AZURE_OPENAI_ENDPOINT: aifoundry.outputs.aiServicesTarget
-      AZURE_ENV_OPENAI_API_VERSION: azureOpenAIApiVersion
-      AZURE_OPENAI_RESOURCE: aifoundry.outputs.aiServicesName
-      AZURE_AI_AGENT_ENDPOINT: aifoundry.outputs.projectEndpoint
-      AZURE_AI_AGENT_API_VERSION: azureAiAgentApiVersion
-      AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME: gptModelName
-      USE_CHAT_HISTORY_ENABLED: 'True'
-      AZURE_COSMOSDB_ACCOUNT: isWorkshop ? cosmosDBModule!.outputs.cosmosAccountName : ''
-      AZURE_COSMOSDB_CONVERSATIONS_CONTAINER: isWorkshop ? cosmosDBModule!.outputs.cosmosContainerName : ''
-      AZURE_COSMOSDB_DATABASE: isWorkshop ? cosmosDBModule!.outputs.cosmosDatabaseName : ''
-      AZURE_COSMOSDB_ENABLE_FEEDBACK: isWorkshop ? 'True' : ''
-      API_UID: managedIdentityModule.outputs.managedIdentityBackendAppOutput.clientId
-      AZURE_AI_SEARCH_ENDPOINT: isWorkshop ? aifoundry.outputs.aiSearchTarget : ''
-      AZURE_AI_SEARCH_INDEX: isWorkshop ? 'call_transcripts_index' : ''
-      AZURE_AI_SEARCH_CONNECTION_NAME: isWorkshop ? aifoundry.outputs.aiSearchConnectionName : ''
-
-      USE_AI_PROJECT_CLIENT: 'True'
-      DISPLAY_CHART_DEFAULT: 'False'
-      APPLICATIONINSIGHTS_CONNECTION_STRING: aifoundry.outputs.applicationInsightsConnectionString
-      DUMMY_TEST: 'True'
-      SOLUTION_NAME: solutionSuffix
-      APP_ENV: 'Prod'
-
-      FABRIC_SQL_DATABASE: ''
-      FABRIC_SQL_SERVER: ''
-      FABRIC_SQL_CONNECTION_STRING: ''
-    }
-  }
-  scope: resourceGroup(resourceGroup().name)
-}
 
 var landingText = usecase == 'Retail-sales-analysis' ? 'You can ask questions around sales, products and orders.' : 'You can ask questions around customer policies, claims and communications.'
 
@@ -348,7 +295,7 @@ module frontend_custom 'deploy_frontend_custom.bicep' = if (shouldDeployApp) {
     applicationInsightsId: aifoundry.outputs.applicationInsightsId
     logAnalyticsWorkspaceId: resolvedLogAnalyticsWorkspaceId
     appSettings: {
-      APP_API_BASE_URL: backendRuntimeStack == 'python' ? backend_custom!.outputs.appUrl : backend_csapi_docker!.outputs.appUrl
+      APP_API_BASE_URL: backend_custom!.outputs.appUrl
       CHAT_LANDING_TEXT: landingText
       IS_WORKSHOP: isWorkshop ? 'True' : 'False'
     }
@@ -403,7 +350,7 @@ output AZURE_AI_AGENT_ENDPOINT string = aifoundry.outputs.projectEndpoint
 output AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME string = gptModelName
 
 @description('Backend API App Service name')
-output API_APP_NAME string = shouldDeployApp ? (backendRuntimeStack == 'python' ? backend_custom!.outputs.appName : backend_csapi_docker!.outputs.appName) : ''
+output API_APP_NAME string = shouldDeployApp ? backend_custom!.outputs.appName : ''
 
 @description('Backend API managed identity object/principal ID')
 output API_PID string = managedIdentityModule.outputs.managedIdentityBackendAppOutput.objectId
@@ -450,8 +397,6 @@ output AI_SERVICE_NAME string = aifoundry.outputs.aiServicesName
 @description('Azure AI Foundry project managed identity principal ID')
 output FOUNDRY_PROJECT_PID string = aifoundry.outputs.aiProjectPrincipalId
 
-@description('Backend runtime stack (python or dotnet)')
-output BACKEND_RUNTIME_STACK string = backendRuntimeStack
 
 @description('Flag indicating workshop deployment mode')
 output IS_WORKSHOP bool = isWorkshop

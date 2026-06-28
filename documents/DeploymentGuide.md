@@ -147,7 +147,6 @@ When you start the deployment, most parameters will have **default values**, but
 | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------- |
 | **Azure Region**                            | The region where resources will be created.                                                               | *(empty)*              |
 | **Environment Name**                        | A **3–20 character alphanumeric value** used to generate a unique ID to prefix the resources.             | env\_name              |
-| **Backend Programming Language**                   | Programming language for the backend API: **python** or **dotnet**.                           | *(empty)*              |
 | **Use Case**                   | Use case: **Retail-sales-analysis** or **Insurance-improve-customer-meetings**.                           | *(empty)*              |
 | **Deployment Type**                         | Select from a drop-down list (allowed: `Standard`, `GlobalStandard`).                                     | GlobalStandard         |
 | **GPT Model**                               | Choose from **gpt-4, gpt-4o, gpt-4o-mini**.                                                               | gpt-4o-mini            |
@@ -212,13 +211,6 @@ Once you've opened the project in [Codespaces](#github-codespaces), [Dev Contain
       azd env set IS_WORKSHOP true
       ```
     
-      In standard mode, by default the backend API is configured to Python.
-      To use dotnet instead, run the below command.
-
-      ```sh
-      azd env set BACKEND_RUNTIME_STACK dotnet
-      ```
-      
       In standard mode, by default the use case is set to Retail Sales.
       To switch to Insurance, run the below command.
 
@@ -238,10 +230,7 @@ Once you've opened the project in [Codespaces](#github-codespaces), [Dev Contain
 
 3. Provide an `azd` environment name (e.g., "daapp").
 4. Select a subscription from your Azure account and choose a location that has quota for all the resources.
-<!--5. Choose the programming language for the backend API:
-   - **Python**
-   - **.NET (dotnet)**
-6. Choose the use case: 
+<!--5. Choose the use case: 
    - **Retail-sales-analysis**
    - **Insurance-improve-customer-meetings** -->
 
@@ -369,9 +358,6 @@ For Insurance improve customer meetings use case:
 - Based on Ida's policy data has she ever missed a payment?
 
 These questions serve as a great starting point to explore insights from the data.
-
-## Create Fabric Data Agent and Publish to Teams
-1. Follow the steps in [CopilotStudioDeployment](./CopilotStudioDeployment.md)
 
 ## Advanced: Deploy Local Changes
 
