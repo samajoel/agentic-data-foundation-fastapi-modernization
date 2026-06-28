@@ -25,8 +25,8 @@ from azure.ai.projects.aio import AIProjectClient
 from agent_framework_foundry import FoundryAgent
 
 # Azure Auth
-from auth.auth_utils import get_authenticated_user_details
-from auth.azure_credential_utils import get_azure_credential_async
+from app.core.auth.auth_utils import get_authenticated_user_details
+from app.core.auth.azure_credential_utils import get_azure_credential_async
 
 load_dotenv()
 
@@ -161,7 +161,7 @@ async def stream_openai_text(conversation_id: str, query: str, user_id: str = ""
             thread_conversation_id = cache.get(conversation_id, None)
 
             # Get database connection
-            from history_sql import SqlQueryTool, get_db_connection
+            from app.api.routers.history_sql import SqlQueryTool, get_db_connection
             db_connection = await get_db_connection()
             if not db_connection:
                 logger.error("Failed to establish database connection")
@@ -370,7 +370,7 @@ async def stream_openai_text_workshop(conversation_id: str, query: str, user_id:
             custom_tool = None
             if not use_data_agent:
                 # Get database connection based on AZURE_ENV_ONLY flag
-                from history_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection
+                from app.api.routers.history_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection
 
                 if AZURE_ENV_ONLY:
                     logger.info("Workshop mode: Using Azure SQL Database")

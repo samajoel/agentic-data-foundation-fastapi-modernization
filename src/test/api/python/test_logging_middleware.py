@@ -34,7 +34,7 @@ def app_instance(test_env_vars):
     Ensures chat/history/history_sql modules are mocked before importing app,
     since they depend on agent_framework which may not be installed in test env.
     """
-    for mod_name in ('chat', 'history', 'history_sql'):
+    for mod_name in ('app.api.routers.chat', 'app.api.routers.history', 'app.api.routers.history_sql'):
         if mod_name not in sys.modules or not isinstance(sys.modules[mod_name], MagicMock):
             m = MagicMock()
             m.router = MagicMock(routes=[], tags=[])
@@ -72,7 +72,7 @@ class TestAttachTraceAttributesMiddleware:
         """Test that user_id from auth header is set on the OTel span."""
         mock_span = MagicMock()
         mock_span.is_recording.return_value = True
-        with patch("app.trace.get_current_span", return_value=mock_span):
+        with patch("app.core.middleware.trace.get_current_span", return_value=mock_span):
             response = test_client.get(
                 "/health",
                 headers={"x-ms-client-principal-id": "test-user-123"}
@@ -84,7 +84,7 @@ class TestAttachTraceAttributesMiddleware:
         """Test that conversation_id from POST body is set on the OTel span."""
         mock_span = MagicMock()
         mock_span.is_recording.return_value = True
-        with patch("app.trace.get_current_span", return_value=mock_span):
+        with patch("app.core.middleware.trace.get_current_span", return_value=mock_span):
             response = test_client.post(
                 "/health",
                 json={"conversation_id": "conv-456", "query": "test"},

@@ -227,7 +227,7 @@ def test_routers_included(test_env_vars):
 def test_chat_router_prefix(test_env_vars):
     """Test that chat router has correct /api prefix."""
     from app import build_app
-    from chat import router as chat_router
+    from app.api.routers.chat import router as chat_router
     
     _ = build_app()
     # Verify chat router is imported and available
@@ -237,7 +237,7 @@ def test_chat_router_prefix(test_env_vars):
 def test_history_router_prefix(test_env_vars):
     """Test that history router has correct /history prefix."""
     from app import build_app
-    from history import router as history_router
+    from app.api.routers.history import router as history_router
     
     build_app()
     # Verify history router is imported and available
@@ -247,7 +247,7 @@ def test_history_router_prefix(test_env_vars):
 def test_historyfab_router_prefix(test_env_vars):
     """Test that historyfab router has correct /historyfab prefix."""
     from app import build_app
-    from history_sql import router as history_sql_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     build_app()
     # Verify historyfab router is imported and available
@@ -258,9 +258,9 @@ def test_historyfab_router_prefix(test_env_vars):
 def test_app_has_correct_tags(test_env_vars):
     """Test that routers are tagged correctly."""
     from app import build_app
-    from chat import router as chat_router
-    from history import router as history_router
-    from history_sql import router as history_sql_router
+    from app.api.routers.chat import router as chat_router
+    from app.api.routers.history import router as history_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     build_app()
     # Since routers are mocked, just verify they exist and can be included
@@ -272,7 +272,7 @@ def test_app_has_correct_tags(test_env_vars):
 def test_chat_router_tag(test_env_vars):
     """Test that chat router has correct 'chat' tag."""
     from app import build_app
-    from chat import router as chat_router
+    from app.api.routers.chat import router as chat_router
     
     build_app()
     # Verify chat router exists (mocked)
@@ -282,7 +282,7 @@ def test_chat_router_tag(test_env_vars):
 def test_history_router_tag(test_env_vars):
     """Test that history router has correct 'history' tag."""
     from app import build_app
-    from history import router as history_router
+    from app.api.routers.history import router as history_router
     
     build_app()
     # Verify history router exists (mocked)
@@ -292,7 +292,7 @@ def test_history_router_tag(test_env_vars):
 def test_historyfab_router_tag(test_env_vars):
     """Test that historyfab router has correct 'historyfab' tag."""
     from app import build_app
-    from history_sql import router as history_sql_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     build_app()
     # Verify historyfab router exists (mocked)
@@ -432,9 +432,9 @@ def test_uvicorn_import():
 
 def test_routers_import():
     """Test that routers can be imported with mocks."""
-    from chat import router as chat_router
-    from history import router as history_router
-    from history_sql import router as history_sql_router
+    from app.api.routers.chat import router as chat_router
+    from app.api.routers.history import router as history_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     assert chat_router is not None
     assert history_router is not None
@@ -659,9 +659,9 @@ def test_app_instance_is_fastapi_type(test_env_vars):
 def test_router_prefixes_are_correct(test_env_vars):
     """Test that all routers have their correct prefixes."""
     from app import build_app
-    from chat import router as chat_router
-    from history import router as history_router
-    from history_sql import router as history_sql_router
+    from app.api.routers.chat import router as chat_router
+    from app.api.routers.history import router as history_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     _ = build_app()
     # Verify all routers are available (mocked routers won't have actual routes)
@@ -930,11 +930,8 @@ def test_cors_allows_delete_method(test_client):
 def test_app_module_structure():
     """Test that app module has expected structure."""
     import app
-    
-    # Check module has expected attributes
-    assert hasattr(app, 'FastAPI')
-    assert hasattr(app, 'CORSMiddleware')
-    assert hasattr(app, 'uvicorn')
+
+    # Check module has expected attributes (re-exported from app/__init__.py)
     assert hasattr(app, 'build_app')
     assert hasattr(app, 'app')
 
@@ -1082,9 +1079,9 @@ def test_app_startup_shutdown_events(test_env_vars):
 
 def test_routers_are_apiRouter_instances(test_env_vars):
     """Test that imported routers are APIRouter instances."""
-    from chat import router as chat_router
-    from history import router as history_router
-    from history_sql import router as history_sql_router
+    from app.api.routers.chat import router as chat_router
+    from app.api.routers.history import router as history_router
+    from app.api.routers.history_sql import router as history_sql_router
     
     # These are mocked, but should still be callable objects
     assert chat_router is not None

@@ -2,7 +2,7 @@
 Unit tests for sample_user.py module with 95%+ coverage.
 """
 
-from auth.sample_user import sample_user
+from app.core.auth.sample_user import sample_user
 
 
 class TestSampleUser:

@@ -6,7 +6,7 @@ import base64
 import json
 from unittest.mock import patch
 
-from auth.auth_utils import get_authenticated_user_details, get_tenantid
+from app.core.auth.auth_utils import get_authenticated_user_details, get_tenantid
 
 
 class TestGetAuthenticatedUserDetails:
@@ -164,7 +164,7 @@ class TestGetTenantId:
         result = get_tenantid(encoded)
         assert isinstance(result, str)
 
-    @patch("auth.auth_utils.logging")
+    @patch("app.core.auth.auth_utils.logging")
     def test_exception_logging(self, _mock_logging):
         """Test that exceptions are logged."""
         result = get_tenantid("invalid!!!base64")

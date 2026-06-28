@@ -8,7 +8,7 @@ from unittest.mock import patch, MagicMock
 
 import pytest
 
-from auth.azure_credential_utils import get_azure_credential, get_azure_credential_async
+from app.core.auth.azure_credential_utils import get_azure_credential, get_azure_credential_async
 
 
 class TestGetAzureCredentialAsync:
@@ -18,7 +18,7 @@ class TestGetAzureCredentialAsync:
     async def test_dev_mode_without_client_id(self):
         """Test async credential in dev mode without client ID."""
         with patch.dict(os.environ, {"APP_ENV": "dev"}, clear=False):
-            with patch("auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
+            with patch("app.core.auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
 
@@ -31,7 +31,7 @@ class TestGetAzureCredentialAsync:
     async def test_dev_mode_with_client_id(self):
         """Test async credential in dev mode with client ID."""
         with patch.dict(os.environ, {"APP_ENV": "dev"}, clear=False):
-            with patch("auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
+            with patch("app.core.auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
 
@@ -46,7 +46,7 @@ class TestGetAzureCredentialAsync:
         """Test async credential in production mode without client ID."""
         with patch.dict(os.environ, {"APP_ENV": "prod"}, clear=False):
             with patch(
-                "auth.azure_credential_utils.AioManagedIdentityCredential"
+                "app.core.auth.azure_credential_utils.AioManagedIdentityCredential"
             ) as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
@@ -61,7 +61,7 @@ class TestGetAzureCredentialAsync:
         """Test async credential in production mode with client ID."""
         with patch.dict(os.environ, {"APP_ENV": "prod"}, clear=False):
             with patch(
-                "auth.azure_credential_utils.AioManagedIdentityCredential"
+                "app.core.auth.azure_credential_utils.AioManagedIdentityCredential"
             ) as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
@@ -75,7 +75,7 @@ class TestGetAzureCredentialAsync:
     async def test_case_insensitive_dev_env(self):
         """Test that APP_ENV check is case-insensitive."""
         with patch.dict(os.environ, {"APP_ENV": "DEV"}, clear=False):
-            with patch("auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
+            with patch("app.core.auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
 
@@ -91,7 +91,7 @@ class TestGetAzureCredentialAsync:
 
         with patch.dict(os.environ, env_copy, clear=True):
             with patch(
-                "auth.azure_credential_utils.AioManagedIdentityCredential"
+                "app.core.auth.azure_credential_utils.AioManagedIdentityCredential"
             ) as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
@@ -104,7 +104,7 @@ class TestGetAzureCredentialAsync:
     async def test_multiple_calls_return_new_instances(self):
         """Test that multiple calls create new credential instances."""
         with patch.dict(os.environ, {"APP_ENV": "dev"}, clear=False):
-            with patch("auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
+            with patch("app.core.auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
                 mock_instance1 = MagicMock()
                 mock_instance2 = MagicMock()
                 mock_cred.side_effect = [mock_instance1, mock_instance2]
@@ -120,7 +120,7 @@ class TestGetAzureCredentialAsync:
     async def test_return_type_dev(self):
         """Test that function returns a credential object in dev mode."""
         with patch.dict(os.environ, {"APP_ENV": "dev"}, clear=False):
-            with patch("auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
+            with patch("app.core.auth.azure_credential_utils.AioDefaultAzureCredential") as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance
 
@@ -133,7 +133,7 @@ class TestGetAzureCredentialAsync:
         """Test that function returns a credential object in prod mode."""
         with patch.dict(os.environ, {"APP_ENV": "prod"}, clear=False):
             with patch(
-                "auth.azure_credential_utils.AioManagedIdentityCredential"
+                "app.core.auth.azure_credential_utils.AioManagedIdentityCredential"
             ) as mock_cred:
                 mock_instance = MagicMock()
                 mock_cred.return_value = mock_instance

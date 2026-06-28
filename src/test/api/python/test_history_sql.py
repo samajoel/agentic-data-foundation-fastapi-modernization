@@ -35,8 +35,8 @@ def mock_db_connection():
 @pytest.fixture
 def mock_sql_dependencies():
     """Mock SQL-related dependencies."""
-    with patch('history_sql.get_fabric_db_connection') as mock_get_conn, \
-         patch('history_sql.pyodbc') as mock_pyodbc:
+    with patch('app.api.routers.history_sql.get_fabric_db_connection') as mock_get_conn, \
+         patch('app.api.routers.history_sql.pyodbc') as mock_pyodbc:
         
         mock_conn = Mock()
         mock_cursor = Mock()
@@ -66,7 +66,7 @@ def client():
     import os
     sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../../api/python')))
     
-    from history_sql import router
+    from app.api.routers.history_sql import router
     
     # Create a minimal FastAPI app for testing
     app = FastAPI()
@@ -81,7 +81,7 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_dev_mode_driver18(self, monkeypatch):
         """Test database connection in dev mode with driver 18."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -94,8 +94,8 @@ class TestGetFabricDBConnection:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
             
             mock_conn = Mock()
             mock_connect.return_value = mock_conn
@@ -109,12 +109,12 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_prod_mode(self, monkeypatch):
         """Test database connection in production mode."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "prod")
         monkeypatch.setenv("FABRIC_SQL_CONNECTION_STRING", "Driver={ODBC Driver 18};Server=test;")
         
-        with patch('history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
             mock_conn = Mock()
             mock_connect.return_value = mock_conn
             
@@ -126,12 +126,12 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_failure(self, monkeypatch):
         """Test database connection failure handling."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "prod")
         monkeypatch.setenv("FABRIC_SQL_CONNECTION_STRING", "invalid")
         
-        with patch('history_sql.pyodbc.connect', side_effect=pyodbc.Error("Connection failed")):
+        with patch('app.api.routers.history_sql.pyodbc.connect', side_effect=pyodbc.Error("Connection failed")):
             result = await get_fabric_db_connection()
             
             assert result is None
@@ -139,7 +139,7 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_fallback_to_driver17(self, monkeypatch):
         """Test fallback to driver 17 when driver 18 fails."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -152,8 +152,8 @@ class TestGetFabricDBConnection:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
             
             # First call fails, second succeeds
             mock_connect.side_effect = [Exception("Driver 18 failed"), Mock()]
@@ -170,9 +170,9 @@ class TestRunNonQueryParams:
     @pytest.mark.asyncio
     async def test_run_nonquery_success(self, mock_db_connection):
         """Test successful non-query execution."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params(
                 "DELETE FROM conversations WHERE id = ?",
                 ("conv_123",)
@@ -184,18 +184,18 @@ class TestRunNonQueryParams:
     @pytest.mark.asyncio
     async def test_run_nonquery_no_connection(self):
         """Test non-query when connection fails."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_nonquery_params("DELETE FROM test")
             assert result is False
 
     @pytest.mark.asyncio
     async def test_run_nonquery_with_params(self, mock_db_connection):
         """Test non-query with multiple parameters."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params(
                 "UPDATE conversations SET title = ? WHERE id = ? AND userId = ?",
                 ("New Title", "conv_123", "user_123")
@@ -208,11 +208,11 @@ class TestRunNonQueryParams:
     @pytest.mark.asyncio
     async def test_run_nonquery_exception_handling(self, mock_db_connection):
         """Test exception handling in non-query execution."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
         mock_db_connection.cursor().execute.side_effect = Exception("SQL Error")
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("INVALID SQL")
             
             assert result is False
@@ -224,14 +224,14 @@ class TestRunQueryParams:
     @pytest.mark.asyncio
     async def test_run_query_success(self, mock_db_connection):
         """Test successful query execution."""
-        from history_sql import run_query_params
+        from app.api.routers.history_sql import run_query_params
         
         mock_db_connection.cursor().fetchall.return_value = [
             ("conv_1", "user_1", "Title 1"),
             ("conv_2", "user_2", "Title 2")
         ]
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             # Check if function exists
             result = await run_query_params("SELECT * FROM conversations")
             
@@ -241,13 +241,13 @@ class TestRunQueryParams:
     @pytest.mark.asyncio
     async def test_run_query_with_params(self, mock_db_connection):
         """Test query with parameters."""
-        from history_sql import run_query_params
+        from app.api.routers.history_sql import run_query_params
         
         mock_db_connection.cursor().fetchall.return_value = [
             ("conv_123", "user_123", "My Conversation")
         ]
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_query_params(
                 "SELECT * FROM conversations WHERE userId = ?",
                 ("user_123",)
@@ -262,21 +262,21 @@ class TestTrackEventIfConfigured:
 
     def test_track_event_with_instrumentation_key(self, monkeypatch):
         """Test tracking event when Application Insights is configured."""
-        from history_sql import track_event_if_configured
+        from app.api.routers.history_sql import track_event_if_configured
         
         monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "InstrumentationKey=test")
         
-        with patch('history_sql.track_event') as mock_track:
+        with patch('app.api.routers.history_sql.track_event') as mock_track:
             track_event_if_configured("TestEvent", {"key": "value"})
             mock_track.assert_called_once_with("TestEvent", {"key": "value"})
 
     def test_track_event_without_instrumentation_key(self, monkeypatch):
         """Test tracking event without Application Insights."""
-        from history_sql import track_event_if_configured
+        from app.api.routers.history_sql import track_event_if_configured
         
         monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "")
         
-        with patch('history_sql.track_event') as mock_track:
+        with patch('app.api.routers.history_sql.track_event') as mock_track:
             track_event_if_configured("TestEvent", {"key": "value"})
             mock_track.assert_not_called()
 
@@ -288,7 +288,7 @@ class TestSqlQueryTool:
         """Test SqlQueryTool class exists."""
         # SqlQueryTool uses Pydantic and requires specific fields
         try:
-            from history_sql import SqlQueryTool
+            from app.api.routers.history_sql import SqlQueryTool
             assert SqlQueryTool is not None
         except ImportError:
             pytest.skip("SqlQueryTool not available")
@@ -296,7 +296,7 @@ class TestSqlQueryTool:
     def test_sqlquerytool_with_mock_connection(self, mock_db_connection):  # noqa: ARG002
         """Test SqlQueryTool with mocked connection."""
         try:
-            from history_sql import SqlQueryTool
+            from app.api.routers.history_sql import SqlQueryTool
             # SqlQueryTool may have required fields, so just verify it exists
             assert hasattr(SqlQueryTool, 'run_sql_query') or hasattr(SqlQueryTool, '__init__')
         except ImportError:
@@ -310,7 +310,7 @@ class TestConversationManagement:
     async def test_create_conversation_function_exists(self):
         """Test create_conversation function exists."""
         try:
-            from history_sql import create_conversation
+            from app.api.routers.history_sql import create_conversation
             assert create_conversation is not None
         except ImportError:
             # Function may not be directly importable
@@ -320,7 +320,7 @@ class TestConversationManagement:
     async def test_delete_conversation_function_exists(self):
         """Test delete_conversation function exists."""
         try:
-            from history_sql import delete_conversation
+            from app.api.routers.history_sql import delete_conversation
             assert delete_conversation is not None
         except ImportError:
             # Function may not be directly importable
@@ -330,7 +330,7 @@ class TestConversationManagement:
     async def test_update_conversation_function_exists(self):
         """Test update_conversation function exists."""
         try:
-            from history_sql import update_conversation
+            from app.api.routers.history_sql import update_conversation
             assert update_conversation is not None
         except ImportError:
             # Function may not be directly importable
@@ -370,7 +370,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_get_conversations_endpoint(self, client, mock_sql_dependencies):
         """Test GET /history/conversations endpoint."""
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.get("/history/conversations?userId=user_123")
             
             # The endpoint should return a valid status code
@@ -379,7 +379,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_create_conversation_endpoint(self, client, mock_sql_dependencies):
         """Test POST /history/conversation endpoint."""
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.post("/history/conversation", json={
                 "userId": "user_123",
                 "title": "Test Conversation"
@@ -390,7 +390,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint(self, client, mock_sql_dependencies):
         """Test DELETE /history/conversation endpoint."""
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.delete("/history/conversation?userId=user_123&conversationId=conv_123")
             
             assert response.status_code in [200, 204, 401, 404, 500]
@@ -402,31 +402,31 @@ class TestDatabaseErrorHandling:
     @pytest.mark.asyncio
     async def test_connection_timeout(self):
         """Test handling of connection timeout."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
-        with patch('history_sql.pyodbc.connect', side_effect=pyodbc.OperationalError("Timeout")):
+        with patch('app.api.routers.history_sql.pyodbc.connect', side_effect=pyodbc.OperationalError("Timeout")):
             result = await get_fabric_db_connection()
             assert result is None
 
     @pytest.mark.asyncio
     async def test_sql_execution_error(self, mock_db_connection):
         """Test handling of SQL execution errors."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
         mock_db_connection.cursor().execute.side_effect = pyodbc.ProgrammingError("Invalid SQL")
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("INVALID QUERY")
             assert result is False
 
     @pytest.mark.asyncio
     async def test_connection_already_closed(self, mock_db_connection):
         """Test handling when connection is already closed."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
         mock_db_connection.cursor.side_effect = pyodbc.ProgrammingError("Connection closed")
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("SELECT * FROM test")
             assert result is False
 
@@ -452,7 +452,7 @@ class TestTokenAuthentication:
     @pytest.mark.asyncio
     async def test_azure_cli_credential_usage(self, monkeypatch):
         """Test using Azure CLI credential for dev environment."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -465,8 +465,8 @@ class TestTokenAuthentication:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
             
             mock_connect.return_value = Mock()
             result = await get_fabric_db_connection()
@@ -508,7 +508,7 @@ class TestGetConversationsFunction:
     @pytest.mark.asyncio
     async def test_get_conversations_basic(self, mock_db_connection):
         """Test get_conversations basic functionality."""
-        from history_sql import get_conversations
+        from app.api.routers.history_sql import get_conversations
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.description = [("id",), ("title",), ("createdAt",)]
@@ -516,7 +516,7 @@ class TestGetConversationsFunction:
             ("conv1", "Test 1", datetime(2024, 1, 1)),
         ]
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=10)
             assert isinstance(result, list)
             mock_cursor.execute.assert_called_once()
@@ -524,25 +524,25 @@ class TestGetConversationsFunction:
     @pytest.mark.asyncio
     async def test_get_conversations_with_all_params(self, mock_db_connection):
         """Test get_conversations with all parameters."""
-        from history_sql import get_conversations
+        from app.api.routers.history_sql import get_conversations
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.description = [("id",)]
         mock_cursor.fetchall.return_value = []
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=5, sort_order="ASC", offset=10)
             assert isinstance(result, list)
     
     @pytest.mark.asyncio
     async def test_get_conversations_exception(self, mock_db_connection):
         """Test get_conversations handles exceptions."""
-        from history_sql import get_conversations
+        from app.api.routers.history_sql import get_conversations
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.execute.side_effect = Exception("DB Error")
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=10)
             assert result is None
 
@@ -553,38 +553,38 @@ class TestGetConversationMessagesFunction:
     @pytest.mark.asyncio
     async def test_get_messages_basic(self, mock_db_connection):
         """Test get_conversation_messages basic functionality."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.description = [("id",), ("content",)]
         mock_cursor.fetchall.return_value = [("msg1", "Hello")]
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123")
             assert isinstance(result, list)
     
     @pytest.mark.asyncio
     async def test_get_messages_desc_order(self, mock_db_connection):
         """Test get_conversation_messages with DESC order."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.description = [("id",)]
         mock_cursor.fetchall.return_value = []
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123", sort_order="DESC")
             assert isinstance(result, list)
     
     @pytest.mark.asyncio
     async def test_get_messages_exception(self, mock_db_connection):
         """Test get_conversation_messages handles exceptions."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.execute.side_effect = Exception("Error")
         
-        with patch('history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123")
             assert result is None
 
@@ -595,10 +595,10 @@ class TestDeleteConversationFunction:
     @pytest.mark.asyncio
     async def test_delete_conversation_calls_nonquery(self):
         """Test delete_conversation calls run_nonquery_params."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"userId": "user123", "conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await delete_conversation("user123", "conv123")
@@ -608,9 +608,9 @@ class TestDeleteConversationFunction:
     @pytest.mark.asyncio
     async def test_delete_conversation_exception(self):
         """Test delete_conversation handles exceptions."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
-        with patch('history_sql.run_nonquery_params', side_effect=Exception("Error")):
+        with patch('app.api.routers.history_sql.run_nonquery_params', side_effect=Exception("Error")):
             result = await delete_conversation("user123", "conv123")
             assert result is False
 
@@ -621,18 +621,18 @@ class TestDeleteAllConversationsFunction:
     @pytest.mark.asyncio
     async def test_delete_all_success(self):
         """Test delete_all_conversations success."""
-        from history_sql import delete_all_conversations
+        from app.api.routers.history_sql import delete_all_conversations
         
-        with patch('history_sql.run_nonquery_params', return_value=True):
+        with patch('app.api.routers.history_sql.run_nonquery_params', return_value=True):
             result = await delete_all_conversations("user123")
             assert result is True
     
     @pytest.mark.asyncio
     async def test_delete_all_exception(self):
         """Test delete_all_conversations handles exceptions."""
-        from history_sql import delete_all_conversations
+        from app.api.routers.history_sql import delete_all_conversations
         
-        with patch('history_sql.run_nonquery_params', side_effect=Exception("Error")):
+        with patch('app.api.routers.history_sql.run_nonquery_params', side_effect=Exception("Error")):
             result = await delete_all_conversations("user123")
             assert result is False
 
@@ -643,10 +643,10 @@ class TestRenameConversationFunction:
     @pytest.mark.asyncio
     async def test_rename_success(self):
         """Test rename_conversation success."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"userId": "user123", "conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await rename_conversation("user123", "conv123", "New Title")
@@ -655,9 +655,9 @@ class TestRenameConversationFunction:
     @pytest.mark.asyncio
     async def test_rename_exception(self):
         """Test rename_conversation handles exceptions."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
-        with patch('history_sql.run_nonquery_params', side_effect=Exception("Error")):
+        with patch('app.api.routers.history_sql.run_nonquery_params', side_effect=Exception("Error")):
             result = await rename_conversation("user123", "conv123", "New Title")
             assert result is False
 
@@ -668,7 +668,7 @@ class TestGenerateTitleFunction:
     @pytest.mark.asyncio
     async def test_generate_title_empty_messages(self):
         """Test generate_title with empty messages."""
-        from history_sql import generate_title
+        from app.api.routers.history_sql import generate_title
         
         result = await generate_title([])
         assert result == "New Conversation"
@@ -676,13 +676,13 @@ class TestGenerateTitleFunction:
     @pytest.mark.asyncio
     async def test_generate_title_with_agent(self):
         """Test generate_title uses agent when available."""
-        from history_sql import generate_title
+        from app.api.routers.history_sql import generate_title
         
         messages = [{"role": "user", "content": "Hello"}]
         
-        with patch('history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
-             patch('history_sql.AIProjectClient') as mock_client, \
-             patch('history_sql.get_azure_credential_async') as mock_cred:
+        with patch('app.api.routers.history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
+             patch('app.api.routers.history_sql.AIProjectClient') as mock_client, \
+             patch('app.api.routers.history_sql.get_azure_credential_async') as mock_cred:
             
             mock_cred.return_value = AsyncMock()
             
@@ -716,14 +716,14 @@ class TestGenerateFallbackTitleFunction:
     
     def test_fallback_title_empty(self):
         """Test generate_fallback_title with empty messages."""
-        from history_sql import generate_fallback_title
+        from app.api.routers.history_sql import generate_fallback_title
         
         result = generate_fallback_title([])
         assert result == "New Conversation"
     
     def test_fallback_title_with_content(self):
         """Test generate_fallback_title with message content."""
-        from history_sql import generate_fallback_title
+        from app.api.routers.history_sql import generate_fallback_title
         
         messages = [{"role": "user", "content": "Test message"}]
         result = generate_fallback_title(messages)
@@ -732,7 +732,7 @@ class TestGenerateFallbackTitleFunction:
     
     def test_fallback_title_truncates(self):
         """Test generate_fallback_title uses first 4 words."""
-        from history_sql import generate_fallback_title
+        from app.api.routers.history_sql import generate_fallback_title
         
         # Long message - should only take first 4 words
         long_content = "word1 word2 word3 word4 word5 word6 word7 word8"
@@ -747,10 +747,10 @@ class TestCreateConversationFunction:
     @pytest.mark.asyncio
     async def test_create_conversation_with_title(self, mock_db_connection):
         """Test create_conversation with title."""
-        from history_sql import create_conversation
+        from app.api.routers.history_sql import create_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = []  # No existing conversation
             mock_run.return_value = True
             result = await create_conversation("user123", title="My Title", conversation_id="conv123")
@@ -759,10 +759,10 @@ class TestCreateConversationFunction:
     @pytest.mark.asyncio
     async def test_create_conversation_no_title(self, mock_db_connection):
         """Test create_conversation without title."""
-        from history_sql import create_conversation
+        from app.api.routers.history_sql import create_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = []
             mock_run.return_value = True
             result = await create_conversation("user123", conversation_id="conv123")
@@ -771,9 +771,9 @@ class TestCreateConversationFunction:
     @pytest.mark.asyncio
     async def test_create_conversation_with_id(self, mock_db_connection):
         """Test create_conversation with custom conversation_id."""
-        from history_sql import create_conversation
+        from app.api.routers.history_sql import create_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             # Return existing conversation
             existing = [{"conversation_id": "custom123", "title": "Existing"}]
             mock_query.return_value = existing
@@ -783,9 +783,9 @@ class TestCreateConversationFunction:
     @pytest.mark.asyncio
     async def test_create_conversation_exception(self):
         """Test create_conversation handles exceptions."""
-        from history_sql import create_conversation
+        from app.api.routers.history_sql import create_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.side_effect = Exception("Error")
             with pytest.raises(Exception):
                 await create_conversation("user123")
@@ -797,12 +797,12 @@ class TestCreateMessageFunction:
     @pytest.mark.asyncio
     async def test_create_message_string_content(self, mock_db_connection):
         """Test create_message with string content."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "user", "content": "Hello", "id": "msg123"}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await create_message("msg123", "conv123", "user123", message)
@@ -811,12 +811,12 @@ class TestCreateMessageFunction:
     @pytest.mark.asyncio
     async def test_create_message_list_content(self, mock_db_connection):
         """Test create_message with list content."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "assistant", "content": {"type": "text", "text": "Hi"}, "id": "msg123"}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await create_message("msg123", "conv123", "user123", message)
@@ -825,11 +825,11 @@ class TestCreateMessageFunction:
     @pytest.mark.asyncio
     async def test_create_message_exception(self):
         """Test create_message handles exceptions."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "user", "content": "Test", "id": "msg123"}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.side_effect = Exception("Error")
             with pytest.raises(Exception):
                 await create_message("msg123", "conv123", "user123", message)
@@ -841,7 +841,7 @@ class TestUpdateConversationFunction:
     @pytest.mark.asyncio
     async def test_update_conversation_new_messages(self, mock_db_connection):
         """Test update_conversation with new messages."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {
             "conversation_id": "conv123",
@@ -851,8 +851,8 @@ class TestUpdateConversationFunction:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             # First call: check conversation exists, Second call: return updated conversation
             mock_query.side_effect = [
                 [{"conversation_id": "conv123"}],  # Conversation exists
@@ -867,7 +867,7 @@ class TestUpdateConversationFunction:
     @pytest.mark.asyncio
     async def test_update_conversation_with_title(self, mock_db_connection):
         """Test update_conversation with existing title."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {
             "conversation_id": "conv123",
@@ -877,10 +877,10 @@ class TestUpdateConversationFunction:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.generate_title', new_callable=AsyncMock) as mock_title, \
-             patch('history_sql.create_conversation', new_callable=AsyncMock), \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.generate_title', new_callable=AsyncMock) as mock_title, \
+             patch('app.api.routers.history_sql.create_conversation', new_callable=AsyncMock), \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             mock_query.side_effect = [
                 [],  # No existing conversation
                 [{"conversation_id": "conv123", "title": "Generated Title", "updatedAt": "2024-01-01"}]  # Final query
@@ -894,11 +894,11 @@ class TestUpdateConversationFunction:
     @pytest.mark.asyncio
     async def test_update_conversation_exception(self):
         """Test update_conversation handles exceptions."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {"conversation_id": "conv123", "messages": []}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.side_effect = Exception("Error")
             with pytest.raises(Exception):
                 await update_conversation("user123", request_json)
@@ -909,17 +909,17 @@ class TestModuleConfiguration:
     
     def test_router_exists(self):
         """Test router is configured."""
-        from history_sql import router
+        from app.api.routers.history_sql import router
         assert router is not None
     
     def test_logger_configured(self):
         """Test logger is configured."""
-        from history_sql import logger
+        from app.api.routers.history_sql import logger
         assert logger is not None
     
     def test_track_event_function_exists(self):
         """Test track_event_if_configured function exists."""
-        from history_sql import track_event_if_configured
+        from app.api.routers.history_sql import track_event_if_configured
         assert callable(track_event_if_configured)
 
 
@@ -929,15 +929,15 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_list_conversations_endpoint_success(self):
         """Test list endpoint returns conversations."""
-        from history_sql import list_conversations
+        from app.api.routers.history_sql import list_conversations
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = [{"id": "conv1", "title": "Test"}]
             
@@ -947,13 +947,13 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_list_conversations_endpoint_exception(self):
         """Test list endpoint handles exceptions."""
-        from history_sql import list_conversations
+        from app.api.routers.history_sql import list_conversations
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.side_effect = Exception("Auth failed")
             
             response = await list_conversations(mock_request, offset=0, limit=25)
@@ -962,15 +962,15 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_read_conversation_endpoint_success(self):
         """Test read endpoint returns messages."""
-        from history_sql import get_conversation_messages_endpoint
+        from app.api.routers.history_sql import get_conversation_messages_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = [{"role": "user", "content": "Hello"}]
             
@@ -980,15 +980,15 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_read_conversation_endpoint_not_found(self):
         """Test read endpoint when conversation not found."""
-        from history_sql import get_conversation_messages_endpoint
+        from app.api.routers.history_sql import get_conversation_messages_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = []
             
@@ -999,14 +999,14 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_read_conversation_endpoint_no_id(self):
         """Test read endpoint requires conversation ID."""
-        from history_sql import get_conversation_messages_endpoint
+        from app.api.routers.history_sql import get_conversation_messages_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1016,15 +1016,15 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint_success(self):
         """Test delete endpoint removes conversation."""
-        from history_sql import delete_conversation_endpoint
+        from app.api.routers.history_sql import delete_conversation_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_delete.return_value = True
             
@@ -1034,15 +1034,15 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint_failed(self):
         """Test delete endpoint when deletion fails."""
-        from history_sql import delete_conversation_endpoint
+        from app.api.routers.history_sql import delete_conversation_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_delete.return_value = False  # Deletion failed
             
@@ -1053,16 +1053,16 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_endpoint_success(self):
         """Test delete all endpoint removes all conversations."""
-        from history_sql import delete_all_conversations_endpoint
+        from app.api.routers.history_sql import delete_all_conversations_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.delete_all_conversations', new_callable=AsyncMock) as mock_delete, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.delete_all_conversations', new_callable=AsyncMock) as mock_delete, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = [{"id": "conv1"}, {"id": "conv2"}]  # Has conversations
             mock_delete.return_value = True
@@ -1073,7 +1073,7 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_rename_conversation_endpoint_success(self):
         """Test rename endpoint updates conversation title."""
-        from history_sql import rename_conversation_endpoint
+        from app.api.routers.history_sql import rename_conversation_endpoint
         from fastapi import Request
         
         mock_request = Mock(spec=Request)
@@ -1083,9 +1083,9 @@ class TestEndpointIntegration:
             return {"conversation_id": "conv123", "title": "New Title"}
         mock_request.json = mock_json
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.rename_conversation', new_callable=AsyncMock) as mock_rename, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.rename_conversation', new_callable=AsyncMock) as mock_rename, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_rename.return_value = True
             
@@ -1095,7 +1095,7 @@ class TestEndpointIntegration:
     @pytest.mark.asyncio
     async def test_update_conversation_endpoint_success(self):
         """Test update endpoint adds messages to conversation."""
-        from history_sql import update_conversation_endpoint
+        from app.api.routers.history_sql import update_conversation_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
@@ -1110,9 +1110,9 @@ class TestEndpointIntegration:
         }
         mock_request.json = AsyncMock(return_value=request_json)
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.update_conversation', new_callable=AsyncMock) as mock_update, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.update_conversation', new_callable=AsyncMock) as mock_update, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_update.return_value = {
                 "id": "conv123", 
@@ -1130,9 +1130,9 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_get_conversations_with_limit_offset(self):
         """Test get_conversations with limit and offset parameters."""
-        from history_sql import get_conversations
+        from app.api.routers.history_sql import get_conversations
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"conversation_id": "conv1"}, {"conversation_id": "conv2"}]
             result = await get_conversations("user123", offset=10, limit=5)
             assert len(result) == 2
@@ -1140,9 +1140,9 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_get_conversation_messages_asc_order(self):
         """Test get_conversation_messages with ascending order."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [
                 {"role": "user", "content": "msg1", "citations": "", "feedback": ""},
                 {"role": "assistant", "content": "msg2", "citations": "", "feedback": ""}
@@ -1153,10 +1153,10 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_no_user_id(self):
         """Test delete_conversation without user_id (admin mode)."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"userId": "user123", "conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await delete_conversation(None, "conv123")  # No user_id
@@ -1165,9 +1165,9 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_permission_denied(self):
         """Test delete_conversation when user doesn't have permission."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"userId": "different_user", "conversation_id": "conv123"}]
             result = await delete_conversation("user123", "conv123")
             assert result is False  # Permission denied
@@ -1175,9 +1175,9 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_no_user_id(self):
         """Test delete_all_conversations without user filtering."""
-        from history_sql import delete_all_conversations
+        from app.api.routers.history_sql import delete_all_conversations
         
-        with patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_run.return_value = True
             result = await delete_all_conversations(None)  # Delete all
             assert result is True
@@ -1185,9 +1185,9 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_permission_denied(self):
         """Test rename_conversation when user doesn't have permission."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"userId": "different_user", "conversation_id": "conv123"}]
             result = await rename_conversation("user123", "conv123", "New Title")
             assert result is False
@@ -1195,7 +1195,7 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_no_title(self):
         """Test rename_conversation with None title."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
         result = await rename_conversation("user123", "conv123", None)
         assert result is False
@@ -1203,7 +1203,7 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_create_message_with_citations(self):
         """Test create_message properly handles citations."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {
             "role": "assistant",
@@ -1212,8 +1212,8 @@ class TestErrorPaths:
             "citations": [{"url": "https://example.com", "title": "Source"}]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await create_message("msg123", "conv123", "user123", message)
@@ -1222,11 +1222,11 @@ class TestErrorPaths:
     @pytest.mark.asyncio
     async def test_create_message_conversation_not_found(self):
         """Test create_message when conversation doesn't exist."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "user", "content": "Hello", "id": "msg123"}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = []  # Conversation not found
             result = await create_message("msg123", "conv123", "user123", message)
             assert result is None
@@ -1238,11 +1238,11 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_get_fabric_db_connection_prod_mode_driver17_fallback(self):
         """Test connection falls back to driver 17 after 18 fails in prod."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
-        with patch('history_sql.os.getenv') as mock_env, \
-             patch('history_sql.pyodbc.connect') as mock_connect, \
-             patch('history_sql.AzureCliCredential'):
+        with patch('app.api.routers.history_sql.os.getenv') as mock_env, \
+             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect, \
+             patch('app.api.routers.history_sql.AzureCliCredential'):
             mock_env.side_effect = lambda key, default=None: {
                 'RUNNING_IN_PRODUCTION': 'true',
                 'SQL_ENDPOINT': 'server.database.windows.net',
@@ -1262,7 +1262,7 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_no_conversation_id(self):
         """Test delete_conversation returns False when no conversation_id."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
         result = await delete_conversation("user123", None)
         assert result is False
@@ -1270,9 +1270,9 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_not_found(self):
         """Test delete_conversation when conversation doesn't exist."""
-        from history_sql import delete_conversation
+        from app.api.routers.history_sql import delete_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = []  # No conversation found
             result = await delete_conversation("user123", "conv123")
             assert result is False
@@ -1280,9 +1280,9 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_not_found(self):
         """Test rename_conversation when conversation doesn't exist."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = []  # No conversation found
             result = await rename_conversation("user123", "conv123", "New Title")
             assert result is False
@@ -1290,10 +1290,10 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_no_user_id(self):
         """Test rename_conversation without user_id (admin mode)."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"userId": "user123", "conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await rename_conversation(None, "conv123", "New Title")
@@ -1302,7 +1302,7 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_no_conversation_id(self):
         """Test rename_conversation returns False when no conversation_id."""
-        from history_sql import rename_conversation
+        from app.api.routers.history_sql import rename_conversation
         
         result = await rename_conversation("user123", None, "New Title")
         assert result is False  # Catches ValueError and returns False
@@ -1310,7 +1310,7 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_create_message_no_conversation_id(self):
         """Test create_message returns None when no conversation_id."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "user", "content": "Hello", "id": "msg123"}
         result = await create_message("msg123", None, "user123", message)
@@ -1319,7 +1319,7 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_get_conversation_messages_no_conversation_id(self):
         """Test get_conversation_messages returns None when no conversation_id."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
         result = await get_conversation_messages("user123", None)
         assert result is None
@@ -1327,9 +1327,9 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_get_conversation_messages_no_user_id(self):
         """Test get_conversation_messages without user_id (admin mode)."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [
                 {"role": "user", "content": "msg1", "citations": "", "feedback": ""}
             ]
@@ -1339,9 +1339,9 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_get_conversations_no_user_id(self):
         """Test get_conversations without user_id (returns all)."""
-        from history_sql import get_conversations
+        from app.api.routers.history_sql import get_conversations
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"conversation_id": "conv1"}, {"conversation_id": "conv2"}]
             result = await get_conversations(None, offset=0, limit=25)
             assert len(result) == 2
@@ -1353,13 +1353,13 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_list_conversations_endpoint_no_auth(self):
         """Test list endpoint without authentication."""
-        from history_sql import list_conversations
+        from app.api.routers.history_sql import list_conversations
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.side_effect = HTTPException(status_code=401, detail="Unauthorized")
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1369,14 +1369,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_read_conversation_endpoint_exception(self):
         """Test read endpoint handles exceptions."""
-        from history_sql import get_conversation_messages_endpoint
+        from app.api.routers.history_sql import get_conversation_messages_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversation_messages', new_callable=AsyncMock) as mock_get:
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.side_effect = Exception("DB Error")
             
@@ -1386,16 +1386,16 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint_exception(self):
         """Test delete endpoint handles exceptions."""
-        from history_sql import delete_conversation_endpoint
+        from app.api.routers.history_sql import delete_conversation_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
-            with patch('history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete:
+            with patch('app.api.routers.history_sql.delete_conversation', new_callable=AsyncMock) as mock_delete:
                 mock_delete.side_effect = Exception("DB Error")
                 
                 response = await delete_conversation_endpoint(mock_request, id="conv123")
@@ -1404,14 +1404,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_endpoint_no_conversations(self):
         """Test delete all endpoint when no conversations exist."""
-        from history_sql import delete_all_conversations_endpoint
+        from app.api.routers.history_sql import delete_all_conversations_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get:
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = []  # No conversations
             
@@ -1422,16 +1422,16 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_endpoint_exception(self):
         """Test delete all endpoint handles exceptions."""
-        from history_sql import delete_all_conversations_endpoint
+        from app.api.routers.history_sql import delete_all_conversations_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
-            with patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get:
+            with patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get:
                 mock_get.side_effect = Exception("DB Error")
                 
                 response = await delete_all_conversations_endpoint(mock_request)
@@ -1440,14 +1440,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_endpoint_no_conversation_id(self):
         """Test rename endpoint without conversation_id."""
-        from history_sql import rename_conversation_endpoint
+        from app.api.routers.history_sql import rename_conversation_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         mock_request.json = AsyncMock(return_value={"title": "New Title"})
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1457,14 +1457,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_endpoint_no_title(self):
         """Test rename endpoint without title."""
-        from history_sql import rename_conversation_endpoint
+        from app.api.routers.history_sql import rename_conversation_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         mock_request.json = AsyncMock(return_value={"conversation_id": "conv123"})
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1474,15 +1474,15 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_endpoint_failed(self):
         """Test rename endpoint when rename fails."""
-        from history_sql import rename_conversation_endpoint
+        from app.api.routers.history_sql import rename_conversation_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         mock_request.json = AsyncMock(return_value={"conversation_id": "conv123", "title": "New Title"})
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.rename_conversation', new_callable=AsyncMock) as mock_rename:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.rename_conversation', new_callable=AsyncMock) as mock_rename:
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_rename.return_value = False
             
@@ -1493,14 +1493,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_rename_conversation_endpoint_exception(self):
         """Test rename endpoint handles exceptions."""
-        from history_sql import rename_conversation_endpoint
+        from app.api.routers.history_sql import rename_conversation_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         mock_request.json = AsyncMock(side_effect=Exception("Parse error"))
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             response = await rename_conversation_endpoint(mock_request)
@@ -1509,14 +1509,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_update_conversation_endpoint_exception(self):
         """Test update endpoint handles exceptions."""
-        from history_sql import update_conversation_endpoint
+        from app.api.routers.history_sql import update_conversation_endpoint
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         mock_request.json = AsyncMock(side_effect=Exception("Parse error"))
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth:
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             response = await update_conversation_endpoint(mock_request)
@@ -1525,14 +1525,14 @@ class TestEndpointErrorPaths:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint_no_id(self):
         """Test delete endpoint without conversation ID."""
-        from history_sql import delete_conversation_endpoint
+        from app.api.routers.history_sql import delete_conversation_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1546,9 +1546,9 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_get_conversation_messages_with_json_content(self):
         """Test get_conversation_messages deserializes JSON content."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [
                 {"role": "user", "content": '{"text": "Hello"}', "citations": "", "feedback": ""}
             ]
@@ -1559,9 +1559,9 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_get_conversation_messages_with_invalid_citations(self):
         """Test get_conversation_messages handles invalid citation JSON."""
-        from history_sql import get_conversation_messages
+        from app.api.routers.history_sql import get_conversation_messages
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [
                 {"role": "user", "content": "Hello", "citations": "invalid json", "feedback": ""}
             ]
@@ -1572,12 +1572,12 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_create_message_failed_insert(self):
         """Test create_message when insert fails."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         message = {"role": "user", "content": "Hello", "id": "msg123"}
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_run.return_value = False  # Insert failed
             result = await create_message("msg123", "conv123", "user123", message)
@@ -1586,7 +1586,7 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_create_message_with_invalid_citations(self):
         """Test create_message handles citations serialization errors."""
-        from history_sql import create_message
+        from app.api.routers.history_sql import create_message
         
         # Create an object that can't be serialized
         class NonSerializable:
@@ -1599,8 +1599,8 @@ class TestMessageContentProcessing:
             "citations": [NonSerializable()]  # Can't serialize
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_run.return_value = True
             result = await create_message("msg123", "conv123", "user123", message)
@@ -1610,7 +1610,7 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_update_conversation_with_tool_message(self):
         """Test update_conversation handles tool messages."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {
             "conversation_id": "conv123",
@@ -1621,8 +1621,8 @@ class TestMessageContentProcessing:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             mock_query.side_effect = [
                 [{"conversation_id": "conv123"}],  # Conversation exists
                 [{"conversation_id": "conv123", "title": "Test", "updatedAt": "2024-01-01"}]
@@ -1635,13 +1635,13 @@ class TestMessageContentProcessing:
     @pytest.mark.asyncio
     async def test_generate_title_service_response_exception(self):
         """Test generate_title handles ServiceResponseException."""
-        from history_sql import generate_title
+        from app.api.routers.history_sql import generate_title
         
         messages = [{"role": "user", "content": "Test message"}]
         
-        with patch('history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
-             patch('history_sql.AIProjectClient') as mock_client, \
-             patch('history_sql.get_azure_credential_async') as mock_cred:
+        with patch('app.api.routers.history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
+             patch('app.api.routers.history_sql.AIProjectClient') as mock_client, \
+             patch('app.api.routers.history_sql.get_azure_credential_async') as mock_cred:
             
             mock_cred.return_value = AsyncMock()
             
@@ -1663,12 +1663,12 @@ class TestApplicationInsights:
         import sys
         
         # Remove history_sql from cache to test fresh import
-        if 'history_sql' in sys.modules:
-            del sys.modules['history_sql']
+        if 'app.api.routers.history_sql' in sys.modules:
+            del sys.modules['app.api.routers.history_sql']
         
-        with patch('history_sql.os.getenv') as mock_env:
+        with patch('app.api.routers.history_sql.os.getenv') as mock_env:
             mock_env.return_value = 'test-instrumentation-key'
-            hs = importlib.import_module('history_sql')
+            hs = importlib.import_module('app.api.routers.history_sql')
             # Module imports successfully regardless of instrumentation key
             assert hs.logger is not None
     
@@ -1677,12 +1677,12 @@ class TestApplicationInsights:
         import sys
         
         # Remove history_sql from cache to test fresh import
-        if 'history_sql' in sys.modules:
-            del sys.modules['history_sql']
+        if 'app.api.routers.history_sql' in sys.modules:
+            del sys.modules['app.api.routers.history_sql']
         
-        with patch('history_sql.os.getenv') as mock_env:
+        with patch('app.api.routers.history_sql.os.getenv') as mock_env:
             mock_env.return_value = None
-            hs = importlib.import_module('history_sql')
+            hs = importlib.import_module('app.api.routers.history_sql')
             # Module imports successfully
             assert hs.logger is not None
 
@@ -1693,29 +1693,29 @@ class TestDatabaseConnectionEdgeCases:
     @pytest.mark.asyncio
     async def test_run_query_params_connection_failure(self):
         """Test run_query_params when connection fails."""
-        from history_sql import run_query_params
+        from app.api.routers.history_sql import run_query_params
         
-        with patch('history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_query_params("SELECT * FROM test", ())
             assert result is None
     
     @pytest.mark.asyncio
     async def test_run_nonquery_params_connection_failure(self):
         """Test run_nonquery_params when connection fails."""
-        from history_sql import run_nonquery_params
+        from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_nonquery_params("INSERT INTO test VALUES (?)", ("value",))
             assert result is False
     
     @pytest.mark.asyncio
     async def test_get_fabric_db_connection_driver_17_fallback_succeeds(self):
         """Test connection falls back to driver 17 successfully."""
-        from history_sql import get_fabric_db_connection
+        from app.api.routers.history_sql import get_fabric_db_connection
         
-        with patch('history_sql.os.getenv') as mock_env, \
-             patch('history_sql.pyodbc.connect') as mock_connect, \
-             patch('history_sql.AzureCliCredential'):
+        with patch('app.api.routers.history_sql.os.getenv') as mock_env, \
+             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect, \
+             patch('app.api.routers.history_sql.AzureCliCredential'):
             mock_env.side_effect = lambda key, default=None: {
                 'RUNNING_IN_PRODUCTION': 'true',
                 'SQL_ENDPOINT': 'server.database.windows.net',
@@ -1737,7 +1737,7 @@ class TestUpdateConversationEdgeCases:
     @pytest.mark.asyncio
     async def test_update_conversation_no_messages(self):
         """Test update_conversation with empty messages."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         from fastapi import HTTPException
         
         request_json = {
@@ -1745,7 +1745,7 @@ class TestUpdateConversationEdgeCases:
             "messages": []
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1755,7 +1755,7 @@ class TestUpdateConversationEdgeCases:
     @pytest.mark.asyncio
     async def test_update_conversation_only_assistant_message(self):
         """Test update_conversation with only assistant message."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         from fastapi import HTTPException
         
         request_json = {
@@ -1765,7 +1765,7 @@ class TestUpdateConversationEdgeCases:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             
             with pytest.raises(HTTPException) as exc_info:
@@ -1775,7 +1775,7 @@ class TestUpdateConversationEdgeCases:
     @pytest.mark.asyncio
     async def test_update_conversation_create_message_fails(self):
         """Test update_conversation when create_message fails."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         from fastapi import HTTPException
         
         request_json = {
@@ -1786,8 +1786,8 @@ class TestUpdateConversationEdgeCases:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             mock_query.return_value = [{"conversation_id": "conv123"}]
             mock_create.return_value = None  # Failed to create message
             
@@ -1798,7 +1798,7 @@ class TestUpdateConversationEdgeCases:
     @pytest.mark.asyncio
     async def test_update_conversation_creates_new_conversation(self):
         """Test update_conversation creates conversation if missing."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {
             "conversation_id": "conv123",
@@ -1808,10 +1808,10 @@ class TestUpdateConversationEdgeCases:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.generate_title', new_callable=AsyncMock) as mock_title, \
-             patch('history_sql.create_conversation', new_callable=AsyncMock) as mock_conv, \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.generate_title', new_callable=AsyncMock) as mock_title, \
+             patch('app.api.routers.history_sql.create_conversation', new_callable=AsyncMock) as mock_conv, \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             mock_query.side_effect = [
                 [],  # No conversation found
                 [{"conversation_id": "conv123", "title": "New", "updatedAt": "2024-01-01"}]
@@ -1826,7 +1826,7 @@ class TestUpdateConversationEdgeCases:
     @pytest.mark.asyncio
     async def test_update_conversation_returns_none_when_not_found(self):
         """Test update_conversation returns None when final query fails."""
-        from history_sql import update_conversation
+        from app.api.routers.history_sql import update_conversation
         
         request_json = {
             "conversation_id": "conv123",
@@ -1836,8 +1836,8 @@ class TestUpdateConversationEdgeCases:
             ]
         }
         
-        with patch('history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
-             patch('history_sql.create_message', new_callable=AsyncMock) as mock_create:
+        with patch('app.api.routers.history_sql.run_query_params', new_callable=AsyncMock) as mock_query, \
+             patch('app.api.routers.history_sql.create_message', new_callable=AsyncMock) as mock_create:
             mock_query.side_effect = [
                 [{"conversation_id": "conv123"}],  # Conversation exists
                 []  # Final query returns nothing
@@ -1854,15 +1854,15 @@ class TestEndpointValidation:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_endpoint_delete_fails(self):
         """Test delete all endpoint when deletion returns False."""
-        from history_sql import delete_all_conversations_endpoint
+        from app.api.routers.history_sql import delete_all_conversations_endpoint
         from fastapi import Request, HTTPException
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.delete_all_conversations', new_callable=AsyncMock) as mock_delete:
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.delete_all_conversations', new_callable=AsyncMock) as mock_delete:
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = [{"id": "conv1"}]
             mock_delete.return_value = False  # Deletion failed
@@ -1874,15 +1874,15 @@ class TestEndpointValidation:
     @pytest.mark.asyncio
     async def test_list_conversations_endpoint_default_params(self):
         """Test list endpoint with default offset and limit."""
-        from history_sql import list_conversations
+        from app.api.routers.history_sql import list_conversations
         from fastapi import Request
         
         mock_request = MagicMock(spec=Request)
         mock_request.headers = {"authorization": "Bearer token"}
         
-        with patch('history_sql.get_authenticated_user_details') as mock_auth, \
-             patch('history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
-             patch('history_sql.track_event_if_configured'):
+        with patch('app.api.routers.history_sql.get_authenticated_user_details') as mock_auth, \
+             patch('app.api.routers.history_sql.get_conversations', new_callable=AsyncMock) as mock_get, \
+             patch('app.api.routers.history_sql.track_event_if_configured'):
             mock_auth.return_value = {"user_principal_id": "user123"}
             mock_get.return_value = []
             
@@ -1897,7 +1897,7 @@ class TestGenerateTitleEdgeCases:
     @pytest.mark.asyncio
     async def test_generate_title_no_user_messages(self):
         """Test generate_title with no user messages."""
-        from history_sql import generate_title
+        from app.api.routers.history_sql import generate_title
         
         messages = [{"role": "assistant", "content": "Hello"}]
         result = await generate_title(messages)
@@ -1906,13 +1906,13 @@ class TestGenerateTitleEdgeCases:
     @pytest.mark.asyncio
     async def test_generate_title_returns_empty_output_from_agent(self):
         """Test generate_title when agent returns empty output list."""
-        from history_sql import generate_title
+        from app.api.routers.history_sql import generate_title
         
         messages = [{"role": "user", "content": "Test"}]
         
-        with patch('history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
-             patch('history_sql.AIProjectClient') as mock_client, \
-             patch('history_sql.get_azure_credential_async') as mock_cred:
+        with patch('app.api.routers.history_sql.AZURE_AI_AGENT_ENDPOINT', 'http://test'), \
+             patch('app.api.routers.history_sql.AIProjectClient') as mock_client, \
+             patch('app.api.routers.history_sql.get_azure_credential_async') as mock_cred:
             
             mock_cred.return_value = AsyncMock()
             
@@ -1942,9 +1942,9 @@ class TestDeleteAllEdgeCases:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_messages_delete_fails(self):
         """Test delete_all when message deletion fails."""
-        from history_sql import delete_all_conversations
+        from app.api.routers.history_sql import delete_all_conversations
         
-        with patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_run.side_effect = [False, True]  # Messages fail, conversations succeed
             result = await delete_all_conversations("user123")
             assert result is False
@@ -1952,9 +1952,9 @@ class TestDeleteAllEdgeCases:
     @pytest.mark.asyncio
     async def test_delete_all_conversations_conversations_delete_fails(self):
         """Test delete_all when conversation deletion fails."""
-        from history_sql import delete_all_conversations
+        from app.api.routers.history_sql import delete_all_conversations
         
-        with patch('history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
+        with patch('app.api.routers.history_sql.run_nonquery_params', new_callable=AsyncMock) as mock_run:
             mock_run.side_effect = [True, False]  # Messages succeed, conversations fail
             result = await delete_all_conversations("user123")
             assert result is False

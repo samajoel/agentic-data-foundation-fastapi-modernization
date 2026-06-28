@@ -144,14 +144,14 @@ if should_mock_azure_sdk():
 # This prevents import errors when testing app.py in isolation
 # But allows other tests to import the real modules
 if should_mock_modules():
-    sys.modules['chat'] = MagicMock()
-    sys.modules['history'] = MagicMock()
-    sys.modules['history_sql'] = MagicMock()
+    sys.modules['app.api.routers.chat'] = MagicMock()
+    sys.modules['app.api.routers.history'] = MagicMock()
+    sys.modules['app.api.routers.history_sql'] = MagicMock()
 
     # Set up router mocks with proper attributes
-    sys.modules['chat'].router = create_mock_router()
-    sys.modules['history'].router = create_mock_router()
-    sys.modules['history_sql'].router = create_mock_router()
+    sys.modules['app.api.routers.chat'].router = create_mock_router()
+    sys.modules['app.api.routers.history'].router = create_mock_router()
+    sys.modules['app.api.routers.history_sql'].router = create_mock_router()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -167,15 +167,15 @@ def setup_test_environment():
     """
     # Conditionally ensure mocks are in place only for app.py tests
     if should_mock_modules():
-        if 'chat' not in sys.modules:
-            sys.modules['chat'] = MagicMock()
-            sys.modules['chat'].router = create_mock_router()
-        if 'history' not in sys.modules:
-            sys.modules['history'] = MagicMock()
-            sys.modules['history'].router = create_mock_router()
-        if 'history_sql' not in sys.modules:
-            sys.modules['history_sql'] = MagicMock()
-            sys.modules['history_sql'].router = create_mock_router()
+        if 'app.api.routers.chat' not in sys.modules:
+            sys.modules['app.api.routers.chat'] = MagicMock()
+            sys.modules['app.api.routers.chat'].router = create_mock_router()
+        if 'app.api.routers.history' not in sys.modules:
+            sys.modules['app.api.routers.history'] = MagicMock()
+            sys.modules['app.api.routers.history'].router = create_mock_router()
+        if 'app.api.routers.history_sql' not in sys.modules:
+            sys.modules['app.api.routers.history_sql'] = MagicMock()
+            sys.modules['app.api.routers.history_sql'].router = create_mock_router()
 
     yield
 

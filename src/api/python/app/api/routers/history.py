@@ -15,8 +15,8 @@ from opentelemetry import trace
 from opentelemetry.trace import Status, StatusCode
 
 # from chat import adjust_processed_data_dates
-from auth.auth_utils import get_authenticated_user_details
-from auth.azure_credential_utils import get_azure_credential_async
+from app.core.auth.auth_utils import get_authenticated_user_details
+from app.core.auth.azure_credential_utils import get_azure_credential_async
 
 router = APIRouter()
 
