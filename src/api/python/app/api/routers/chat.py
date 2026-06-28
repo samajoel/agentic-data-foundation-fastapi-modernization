@@ -161,7 +161,7 @@ async def stream_openai_text(conversation_id: str, query: str, user_id: str = ""
             thread_conversation_id = cache.get(conversation_id, None)
 
             # Get database connection
-            from app.api.routers.history_sql import SqlQueryTool, get_db_connection
+            from app.data.fabric_sql import SqlQueryTool, get_db_connection
             db_connection = await get_db_connection()
             if not db_connection:
                 logger.error("Failed to establish database connection")
@@ -370,7 +370,7 @@ async def stream_openai_text_workshop(conversation_id: str, query: str, user_id:
             custom_tool = None
             if not use_data_agent:
                 # Get database connection based on AZURE_ENV_ONLY flag
-                from app.api.routers.history_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection
+                from app.data.fabric_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection
 
                 if AZURE_ENV_ONLY:
                     logger.info("Workshop mode: Using Azure SQL Database")

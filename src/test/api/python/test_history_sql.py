@@ -35,8 +35,8 @@ def mock_db_connection():
 @pytest.fixture
 def mock_sql_dependencies():
     """Mock SQL-related dependencies."""
-    with patch('app.api.routers.history_sql.get_fabric_db_connection') as mock_get_conn, \
-         patch('app.api.routers.history_sql.pyodbc') as mock_pyodbc:
+    with patch('app.data.fabric_sql.get_fabric_db_connection') as mock_get_conn, \
+         patch('app.data.fabric_sql.pyodbc') as mock_pyodbc:
         
         mock_conn = Mock()
         mock_cursor = Mock()
@@ -81,7 +81,7 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_dev_mode_driver18(self, monkeypatch):
         """Test database connection in dev mode with driver 18."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -94,8 +94,8 @@ class TestGetFabricDBConnection:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.data.fabric_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.data.fabric_sql.pyodbc.connect') as mock_connect:
             
             mock_conn = Mock()
             mock_connect.return_value = mock_conn
@@ -109,12 +109,12 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_prod_mode(self, monkeypatch):
         """Test database connection in production mode."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "prod")
         monkeypatch.setenv("FABRIC_SQL_CONNECTION_STRING", "Driver={ODBC Driver 18};Server=test;")
         
-        with patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.data.fabric_sql.pyodbc.connect') as mock_connect:
             mock_conn = Mock()
             mock_connect.return_value = mock_conn
             
@@ -126,12 +126,12 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_failure(self, monkeypatch):
         """Test database connection failure handling."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "prod")
         monkeypatch.setenv("FABRIC_SQL_CONNECTION_STRING", "invalid")
         
-        with patch('app.api.routers.history_sql.pyodbc.connect', side_effect=pyodbc.Error("Connection failed")):
+        with patch('app.data.fabric_sql.pyodbc.connect', side_effect=pyodbc.Error("Connection failed")):
             result = await get_fabric_db_connection()
             
             assert result is None
@@ -139,7 +139,7 @@ class TestGetFabricDBConnection:
     @pytest.mark.asyncio
     async def test_get_connection_fallback_to_driver17(self, monkeypatch):
         """Test fallback to driver 17 when driver 18 fails."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -152,8 +152,8 @@ class TestGetFabricDBConnection:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.data.fabric_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.data.fabric_sql.pyodbc.connect') as mock_connect:
             
             # First call fails, second succeeds
             mock_connect.side_effect = [Exception("Driver 18 failed"), Mock()]
@@ -172,7 +172,7 @@ class TestRunNonQueryParams:
         """Test successful non-query execution."""
         from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params(
                 "DELETE FROM conversations WHERE id = ?",
                 ("conv_123",)
@@ -186,7 +186,7 @@ class TestRunNonQueryParams:
         """Test non-query when connection fails."""
         from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.data.fabric_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_nonquery_params("DELETE FROM test")
             assert result is False
 
@@ -195,7 +195,7 @@ class TestRunNonQueryParams:
         """Test non-query with multiple parameters."""
         from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params(
                 "UPDATE conversations SET title = ? WHERE id = ? AND userId = ?",
                 ("New Title", "conv_123", "user_123")
@@ -212,7 +212,7 @@ class TestRunNonQueryParams:
         
         mock_db_connection.cursor().execute.side_effect = Exception("SQL Error")
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("INVALID SQL")
             
             assert result is False
@@ -231,7 +231,7 @@ class TestRunQueryParams:
             ("conv_2", "user_2", "Title 2")
         ]
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             # Check if function exists
             result = await run_query_params("SELECT * FROM conversations")
             
@@ -247,7 +247,7 @@ class TestRunQueryParams:
             ("conv_123", "user_123", "My Conversation")
         ]
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_query_params(
                 "SELECT * FROM conversations WHERE userId = ?",
                 ("user_123",)
@@ -370,7 +370,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_get_conversations_endpoint(self, client, mock_sql_dependencies):
         """Test GET /history/conversations endpoint."""
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.get("/history/conversations?userId=user_123")
             
             # The endpoint should return a valid status code
@@ -379,7 +379,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_create_conversation_endpoint(self, client, mock_sql_dependencies):
         """Test POST /history/conversation endpoint."""
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.post("/history/conversation", json={
                 "userId": "user_123",
                 "title": "Test Conversation"
@@ -390,7 +390,7 @@ class TestSQLEndpoints:
     @pytest.mark.asyncio
     async def test_delete_conversation_endpoint(self, client, mock_sql_dependencies):
         """Test DELETE /history/conversation endpoint."""
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_sql_dependencies['connection']):
             response = client.delete("/history/conversation?userId=user_123&conversationId=conv_123")
             
             assert response.status_code in [200, 204, 401, 404, 500]
@@ -402,9 +402,9 @@ class TestDatabaseErrorHandling:
     @pytest.mark.asyncio
     async def test_connection_timeout(self):
         """Test handling of connection timeout."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
-        with patch('app.api.routers.history_sql.pyodbc.connect', side_effect=pyodbc.OperationalError("Timeout")):
+        with patch('app.data.fabric_sql.pyodbc.connect', side_effect=pyodbc.OperationalError("Timeout")):
             result = await get_fabric_db_connection()
             assert result is None
 
@@ -415,7 +415,7 @@ class TestDatabaseErrorHandling:
         
         mock_db_connection.cursor().execute.side_effect = pyodbc.ProgrammingError("Invalid SQL")
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("INVALID QUERY")
             assert result is False
 
@@ -426,7 +426,7 @@ class TestDatabaseErrorHandling:
         
         mock_db_connection.cursor.side_effect = pyodbc.ProgrammingError("Connection closed")
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await run_nonquery_params("SELECT * FROM test")
             assert result is False
 
@@ -452,7 +452,7 @@ class TestTokenAuthentication:
     @pytest.mark.asyncio
     async def test_azure_cli_credential_usage(self, monkeypatch):
         """Test using Azure CLI credential for dev environment."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         monkeypatch.setenv("APP_ENV", "dev")
         monkeypatch.setenv("FABRIC_SQL_DATABASE", "test-db")
@@ -465,8 +465,8 @@ class TestTokenAuthentication:
         mock_credential.get_token = AsyncMock(return_value=mock_token)
         mock_credential.close = AsyncMock()
         
-        with patch('app.api.routers.history_sql.AzureCliCredential', return_value=mock_credential), \
-             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect:
+        with patch('app.data.fabric_sql.AzureCliCredential', return_value=mock_credential), \
+             patch('app.data.fabric_sql.pyodbc.connect') as mock_connect:
             
             mock_connect.return_value = Mock()
             result = await get_fabric_db_connection()
@@ -516,7 +516,7 @@ class TestGetConversationsFunction:
             ("conv1", "Test 1", datetime(2024, 1, 1)),
         ]
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=10)
             assert isinstance(result, list)
             mock_cursor.execute.assert_called_once()
@@ -530,7 +530,7 @@ class TestGetConversationsFunction:
         mock_cursor.description = [("id",)]
         mock_cursor.fetchall.return_value = []
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=5, sort_order="ASC", offset=10)
             assert isinstance(result, list)
     
@@ -542,7 +542,7 @@ class TestGetConversationsFunction:
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.execute.side_effect = Exception("DB Error")
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversations("user123", limit=10)
             assert result is None
 
@@ -559,7 +559,7 @@ class TestGetConversationMessagesFunction:
         mock_cursor.description = [("id",), ("content",)]
         mock_cursor.fetchall.return_value = [("msg1", "Hello")]
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123")
             assert isinstance(result, list)
     
@@ -572,7 +572,7 @@ class TestGetConversationMessagesFunction:
         mock_cursor.description = [("id",)]
         mock_cursor.fetchall.return_value = []
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123", sort_order="DESC")
             assert isinstance(result, list)
     
@@ -584,7 +584,7 @@ class TestGetConversationMessagesFunction:
         mock_cursor = mock_db_connection.cursor()
         mock_cursor.execute.side_effect = Exception("Error")
         
-        with patch('app.api.routers.history_sql.get_fabric_db_connection', return_value=mock_db_connection):
+        with patch('app.data.fabric_sql.get_fabric_db_connection', return_value=mock_db_connection):
             result = await get_conversation_messages("user123", "conv123")
             assert result is None
 
@@ -1238,11 +1238,11 @@ class TestDatabaseConnectionPaths:
     @pytest.mark.asyncio
     async def test_get_fabric_db_connection_prod_mode_driver17_fallback(self):
         """Test connection falls back to driver 17 after 18 fails in prod."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         with patch('app.api.routers.history_sql.os.getenv') as mock_env, \
-             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect, \
-             patch('app.api.routers.history_sql.AzureCliCredential'):
+             patch('app.data.fabric_sql.pyodbc.connect') as mock_connect, \
+             patch('app.data.fabric_sql.AzureCliCredential'):
             mock_env.side_effect = lambda key, default=None: {
                 'RUNNING_IN_PRODUCTION': 'true',
                 'SQL_ENDPOINT': 'server.database.windows.net',
@@ -1695,7 +1695,7 @@ class TestDatabaseConnectionEdgeCases:
         """Test run_query_params when connection fails."""
         from app.api.routers.history_sql import run_query_params
         
-        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.data.fabric_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_query_params("SELECT * FROM test", ())
             assert result is None
     
@@ -1704,18 +1704,18 @@ class TestDatabaseConnectionEdgeCases:
         """Test run_nonquery_params when connection fails."""
         from app.api.routers.history_sql import run_nonquery_params
         
-        with patch('app.api.routers.history_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
+        with patch('app.data.fabric_sql.get_db_connection', new_callable=AsyncMock, return_value=None):
             result = await run_nonquery_params("INSERT INTO test VALUES (?)", ("value",))
             assert result is False
     
     @pytest.mark.asyncio
     async def test_get_fabric_db_connection_driver_17_fallback_succeeds(self):
         """Test connection falls back to driver 17 successfully."""
-        from app.api.routers.history_sql import get_fabric_db_connection
+        from app.data.fabric_sql import get_fabric_db_connection
         
         with patch('app.api.routers.history_sql.os.getenv') as mock_env, \
-             patch('app.api.routers.history_sql.pyodbc.connect') as mock_connect, \
-             patch('app.api.routers.history_sql.AzureCliCredential'):
+             patch('app.data.fabric_sql.pyodbc.connect') as mock_connect, \
+             patch('app.data.fabric_sql.AzureCliCredential'):
             mock_env.side_effect = lambda key, default=None: {
                 'RUNNING_IN_PRODUCTION': 'true',
                 'SQL_ENDPOINT': 'server.database.windows.net',

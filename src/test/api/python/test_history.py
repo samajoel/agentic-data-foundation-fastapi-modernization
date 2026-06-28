@@ -19,16 +19,17 @@ class TestModuleAndConfiguration:
     """Test module-level code and configuration."""
     
     def test_imports(self):
-        from app.api.routers.history import APIRouter, CosmosConversationClient, router
+        from app.api.routers.history import APIRouter, router
+        from app.data.cosmos_history import CosmosConversationClient
         assert APIRouter is not None
         assert CosmosConversationClient is not None
         assert router is not None
     
     def test_configuration_loaded(self):
-        from app.api.routers.history import USE_CHAT_HISTORY_ENABLED  # pylint: disable=import-outside-toplevel
+        from app.data.cosmos_history import USE_CHAT_HISTORY_ENABLED  # pylint: disable=import-outside-toplevel
         assert USE_CHAT_HISTORY_ENABLED is not None
         # AZURE_COSMOSDB_ACCOUNT can be None when not configured
-        assert hasattr(__import__('app.api.routers.history', fromlist=['AZURE_COSMOSDB_ACCOUNT']), 'AZURE_COSMOSDB_ACCOUNT')
+        assert hasattr(__import__('app.data.cosmos_history', fromlist=['AZURE_COSMOSDB_ACCOUNT']), 'AZURE_COSMOSDB_ACCOUNT')
     
     def test_track_event_configured(self, monkeypatch):
         from app.api.routers.history import track_event_if_configured
@@ -48,14 +49,14 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_init_success(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
         mock_db = MagicMock()
         mock_container = MagicMock()
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -70,7 +71,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_init_invalid_credentials(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         
@@ -81,7 +82,7 @@ class TestCosmosClient:
             response=MagicMock()
         )
         
-        with patch('app.api.routers.history.CosmosClient') as mock_cosmos_class:
+        with patch('app.data.cosmos_history.CosmosClient') as mock_cosmos_class:
             mock_cosmos_class.side_effect = error
             
             with pytest.raises(ValueError, match="Invalid credentials"):
@@ -94,7 +95,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_init_invalid_endpoint(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         
@@ -105,7 +106,7 @@ class TestCosmosClient:
             response=MagicMock()
         )
         
-        with patch('app.api.routers.history.CosmosClient') as mock_cosmos_class:
+        with patch('app.data.cosmos_history.CosmosClient') as mock_cosmos_class:
             mock_cosmos_class.side_effect = error
             
             with pytest.raises(ValueError, match="Invalid CosmosDB endpoint"):
@@ -118,7 +119,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_init_invalid_database(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -129,7 +130,7 @@ class TestCosmosClient:
             response=MagicMock()
         )
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client.side_effect = error
             
             with pytest.raises(ValueError, match="Invalid CosmosDB database name"):
@@ -142,7 +143,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_init_invalid_container(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -154,7 +155,7 @@ class TestCosmosClient:
             response=MagicMock()
         )
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client.side_effect = error
             
@@ -168,7 +169,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_ensure_success(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -177,7 +178,7 @@ class TestCosmosClient:
         mock_db.read = AsyncMock()
         mock_container.read = AsyncMock()
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -193,7 +194,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_ensure_database_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -201,7 +202,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_db.read = AsyncMock(side_effect=Exception("DB read error"))
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -218,7 +219,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_ensure_container_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -227,7 +228,7 @@ class TestCosmosClient:
         mock_db.read = AsyncMock()
         mock_container.read = AsyncMock(side_effect=Exception("Container read error"))
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -244,7 +245,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_create_conversation(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -252,7 +253,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_container.upsert_item = AsyncMock(return_value={"id": "conv123", "userId": "user123"})
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -268,7 +269,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_create_conversation_fails(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -276,7 +277,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_container.upsert_item = AsyncMock(return_value=None)
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -292,7 +293,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_upsert_conversation(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -300,7 +301,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_container.upsert_item = AsyncMock(return_value={"id": "conv123", "title": "Updated"})
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -316,7 +317,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_delete_conversation(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -325,7 +326,7 @@ class TestCosmosClient:
         mock_container.read_item = AsyncMock(return_value={"id": "conv123"})
         mock_container.delete_item = AsyncMock(return_value=True)
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -341,7 +342,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_delete_conversation_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -349,7 +350,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_container.read_item = AsyncMock(return_value=None)
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -365,7 +366,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_get_conversations(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -378,7 +379,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -394,7 +395,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_get_conversation(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -406,7 +407,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -422,7 +423,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_get_conversation_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -435,7 +436,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -451,7 +452,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_create_message(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -465,7 +466,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -486,7 +487,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_create_message_conversation_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -501,7 +502,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -522,7 +523,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_get_messages(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -535,7 +536,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -551,7 +552,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_delete_messages(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -565,7 +566,7 @@ class TestCosmosClient:
         mock_container.query_items = MagicMock(return_value=mock_query())
         mock_container.delete_item = AsyncMock(return_value=True)
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -581,7 +582,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_delete_messages_none_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -594,7 +595,7 @@ class TestCosmosClient:
         
         mock_container.query_items = MagicMock(return_value=mock_query())
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -610,7 +611,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_update_message_feedback(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -619,7 +620,7 @@ class TestCosmosClient:
         mock_container.read_item = AsyncMock(return_value={"id": "msg123", "content": "test"})
         mock_container.upsert_item = AsyncMock(return_value={"id": "msg123", "feedback": "positive"})
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -636,7 +637,7 @@ class TestCosmosClient:
     
     @pytest.mark.asyncio
     async def test_update_message_feedback_not_found(self):
-        from app.api.routers.history import CosmosConversationClient
+        from app.data.cosmos_history import CosmosConversationClient
         
         mock_cred = AsyncMock()
         mock_cosmos = MagicMock()
@@ -644,7 +645,7 @@ class TestCosmosClient:
         mock_container = AsyncMock()
         mock_container.read_item = AsyncMock(return_value=None)
         
-        with patch('app.api.routers.history.CosmosClient', return_value=mock_cosmos):
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
             mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
             mock_db.get_container_client = MagicMock(return_value=mock_container)
             
@@ -665,7 +666,7 @@ class TestHelperFunctions:
     
     @pytest.mark.asyncio
     async def test_init_cosmosdb_disabled(self, monkeypatch):
-        from app.api.routers.history import init_cosmosdb_client
+        from app.data.cosmos_history import init_cosmosdb_client
         
         monkeypatch.delenv("USE_CHAT_HISTORY_ENABLED", raising=False)
         result = await init_cosmosdb_client()

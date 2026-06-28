@@ -14,8 +14,8 @@
 
 **Purpose**: Confirm baseline before any changes.
 
-- [ ] T001 Record baseline pytest pass count — run `pytest src/test/api/python/ --ignore=src/test/api/python/e2e-test -q 2>&1 | tail -5` from repo root and note the numbers
-- [ ] T002 Verify `src/api/python/app/data/__init__.py` exists and is empty (0 bytes, from Spec 002)
+- [X] T001 Record baseline pytest pass count — run `pytest src/test/api/python/ --ignore=src/test/api/python/e2e-test -q 2>&1 | tail -5` from repo root and note the numbers
+- [X] T002 Verify `src/api/python/app/data/__init__.py` exists and is empty (0 bytes, from Spec 002)
 
 ---
 
@@ -25,8 +25,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T003 Verify `src/api/python/app/data/` directory exists — run `ls src/api/python/app/data/` and confirm only `__init__.py` is present
-- [ ] T004 Verify `app/core/auth/azure_credential_utils.py` exports `get_azure_credential_async` — run `grep -n "def get_azure_credential_async" src/api/python/app/core/auth/azure_credential_utils.py`
+- [X] T003 Verify `src/api/python/app/data/` directory exists — run `ls src/api/python/app/data/` and confirm only `__init__.py` is present
+- [X] T004 Verify `app/core/auth/azure_credential_utils.py` exports `get_azure_credential_async` — run `grep -n "def get_azure_credential_async" src/api/python/app/core/auth/azure_credential_utils.py`
 
 **Checkpoint**: Foundation confirmed — user story implementation can now begin.
 
@@ -40,17 +40,17 @@
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] Create `src/api/python/app/data/fabric_sql.py` with these extracted symbols from `history_sql.py`: `get_azure_sql_connection`, `get_fabric_db_connection`, `get_db_connection`, `run_nonquery_params`, `run_query_params`, `SqlQueryTool`. Copy the full implementations verbatim. Include all required imports: `import json, logging, os, struct, uuid` / `from datetime import datetime, date` / `from decimal import Decimal` / `from typing import Tuple, Any` / `import pyodbc` / `from azure.identity.aio import AzureCliCredential` / `from pydantic import BaseModel, ConfigDict` / `from app.core.auth.azure_credential_utils import get_azure_credential_async`. No module-level constants are needed.
+- [X] T005 [US2] Create `src/api/python/app/data/fabric_sql.py` with these extracted symbols from `history_sql.py`: `get_azure_sql_connection`, `get_fabric_db_connection`, `get_db_connection`, `run_nonquery_params`, `run_query_params`, `SqlQueryTool`. Copy the full implementations verbatim. Include all required imports: `import json, logging, os, struct, uuid` / `from datetime import datetime, date` / `from decimal import Decimal` / `from typing import Tuple, Any` / `import pyodbc` / `from azure.identity.aio import AzureCliCredential` / `from pydantic import BaseModel, ConfigDict` / `from app.core.auth.azure_credential_utils import get_azure_credential_async`. No module-level constants are needed.
 
-- [ ] T006 [US2] Update `src/api/python/app/api/routers/history_sql.py` — remove the definitions of `get_azure_sql_connection`, `get_fabric_db_connection`, `get_db_connection`, `run_nonquery_params`, `run_query_params`, and `SqlQueryTool`. Remove their now-exclusive imports: `import struct`, `import pyodbc`, `from azure.identity.aio import AzureCliCredential`, `from pydantic import BaseModel, ConfigDict`, `from decimal import Decimal`, `from typing import Tuple, Any`. Add at the top of the local imports block: `from app.data.fabric_sql import (get_azure_sql_connection, get_fabric_db_connection, get_db_connection, run_nonquery_params, run_query_params, SqlQueryTool)`. Keep all route handlers, business logic functions, and remaining imports (`json, logging, os, uuid, datetime, date, AIProjectClient, etc.`).
+- [X] T006 [US2] Update `src/api/python/app/api/routers/history_sql.py` — remove the definitions of `get_azure_sql_connection`, `get_fabric_db_connection`, `get_db_connection`, `run_nonquery_params`, `run_query_params`, and `SqlQueryTool`. Remove their now-exclusive imports: `import struct`, `import pyodbc`, `from azure.identity.aio import AzureCliCredential`, `from pydantic import BaseModel, ConfigDict`, `from decimal import Decimal`, `from typing import Tuple, Any`. Add at the top of the local imports block: `from app.data.fabric_sql import (get_azure_sql_connection, get_fabric_db_connection, get_db_connection, run_nonquery_params, run_query_params, SqlQueryTool)`. Keep all route handlers, business logic functions, and remaining imports (`json, logging, os, uuid, datetime, date, AIProjectClient, etc.`).
 
-- [ ] T007 [US2] Update `src/api/python/app/api/routers/chat.py` — find the import around line 373: `from app.api.routers.history_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection` and change it to `from app.data.fabric_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection`. No other changes.
+- [X] T007 [US2] Update `src/api/python/app/api/routers/chat.py` — find the import around line 373: `from app.api.routers.history_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection` and change it to `from app.data.fabric_sql import SqlQueryTool, get_azure_sql_connection, get_fabric_db_connection`. No other changes.
 
-- [ ] T008 [US2] Update `src/test/api/python/test_history_sql.py` — update the following patch target categories that break after the hard move: (A) Replace all `patch('app.api.routers.history_sql.AzureCliCredential'` with `patch('app.data.fabric_sql.AzureCliCredential'`; (B) Replace all `patch('app.api.routers.history_sql.pyodbc.connect'` with `patch('app.data.fabric_sql.pyodbc.connect'`; (C) Replace all `patch('app.api.routers.history_sql.pyodbc'` with `patch('app.data.fabric_sql.pyodbc'`; (D) Replace all `from app.api.routers.history_sql import get_fabric_db_connection` in isolation test methods with `from app.data.fabric_sql import get_fabric_db_connection`; (E) Replace all `from app.api.routers.history_sql import run_nonquery_params` isolation imports with `from app.data.fabric_sql import run_nonquery_params`; (F) Replace all `from app.api.routers.history_sql import run_query_params` isolation imports with `from app.data.fabric_sql import run_query_params`. Do NOT update patches like `patch('app.api.routers.history_sql.get_fabric_db_connection'` used in router-level tests (those remain valid because the router imports the name into its namespace).
+- [X] T008 [US2] Update `src/test/api/python/test_history_sql.py` — update the following patch target categories that break after the hard move: (A) Replace all `patch('app.api.routers.history_sql.AzureCliCredential'` with `patch('app.data.fabric_sql.AzureCliCredential'`; (B) Replace all `patch('app.api.routers.history_sql.pyodbc.connect'` with `patch('app.data.fabric_sql.pyodbc.connect'`; (C) Replace all `patch('app.api.routers.history_sql.pyodbc'` with `patch('app.data.fabric_sql.pyodbc'`; (D) Replace all `from app.api.routers.history_sql import get_fabric_db_connection` in isolation test methods with `from app.data.fabric_sql import get_fabric_db_connection`; (E) Replace all `from app.api.routers.history_sql import run_nonquery_params` isolation imports with `from app.data.fabric_sql import run_nonquery_params`; (F) Replace all `from app.api.routers.history_sql import run_query_params` isolation imports with `from app.data.fabric_sql import run_query_params`. Do NOT update patches like `patch('app.api.routers.history_sql.get_fabric_db_connection'` used in router-level tests (those remain valid because the router imports the name into its namespace).
 
-- [ ] T009 [US2] Verify US2 extraction — run `cd src/api/python && python -c "import sys, types; sys.modules['pyodbc'] = types.ModuleType('pyodbc'); setattr(sys.modules['pyodbc'], 'Connection', object); setattr(sys.modules['pyodbc'], 'Error', Exception); import app.data.fabric_sql as f; assert hasattr(f, 'run_query_params'); assert hasattr(f, 'SqlQueryTool'); print('fabric_sql OK')"` — should print `fabric_sql OK`
+- [X] T009 [US2] Verify US2 extraction — run `cd src/api/python && python -c "import sys, types; sys.modules['pyodbc'] = types.ModuleType('pyodbc'); setattr(sys.modules['pyodbc'], 'Connection', object); setattr(sys.modules['pyodbc'], 'Error', Exception); import app.data.fabric_sql as f; assert hasattr(f, 'run_query_params'); assert hasattr(f, 'SqlQueryTool'); print('fabric_sql OK')"` — should print `fabric_sql OK`
 
-- [ ] T010 [US2] Run flake8 on modified Fabric SQL files — `flake8 src/api/python/app/data/fabric_sql.py src/api/python/app/api/routers/history_sql.py src/api/python/app/api/routers/chat.py` from repo root — fix any violations before proceeding
+- [X] T010 [US2] Run flake8 on modified Fabric SQL files — `flake8 src/api/python/app/data/fabric_sql.py src/api/python/app/api/routers/history_sql.py src/api/python/app/api/routers/chat.py` from repo root — fix any violations before proceeding
 
 **Checkpoint**: US2 complete — Fabric SQL data functions live in `app/data/fabric_sql.py`; routers delegate to it; chat.py imports from the data module.
 
@@ -64,15 +64,15 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] Create `src/api/python/app/data/cosmos_history.py` with these extracted symbols from `history.py`: `USE_CHAT_HISTORY_ENABLED`, `AZURE_COSMOSDB_DATABASE`, `AZURE_COSMOSDB_ACCOUNT`, `AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`, `AZURE_COSMOSDB_ENABLE_FEEDBACK`, `CHAT_HISTORY_ENABLED`, `CosmosConversationClient`, `init_cosmosdb_client`. Copy all implementations verbatim. Include all required imports: `from datetime import datetime` / `import logging, os, uuid` / `from azure.cosmos.aio import CosmosClient` / `from azure.cosmos import exceptions` / `from app.core.auth.azure_credential_utils import get_azure_credential_async`. The six module-level constants use `os.getenv()` (safe at import time — no network calls). `CosmosClient` is only instantiated inside `CosmosConversationClient.__init__()` which is only called per-request.
+- [X] T011 [US3] Create `src/api/python/app/data/cosmos_history.py` with these extracted symbols from `history.py`: `USE_CHAT_HISTORY_ENABLED`, `AZURE_COSMOSDB_DATABASE`, `AZURE_COSMOSDB_ACCOUNT`, `AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`, `AZURE_COSMOSDB_ENABLE_FEEDBACK`, `CHAT_HISTORY_ENABLED`, `CosmosConversationClient`, `init_cosmosdb_client`. Copy all implementations verbatim. Include all required imports: `from datetime import datetime` / `import logging, os, uuid` / `from azure.cosmos.aio import CosmosClient` / `from azure.cosmos import exceptions` / `from app.core.auth.azure_credential_utils import get_azure_credential_async`. The six module-level constants use `os.getenv()` (safe at import time — no network calls). `CosmosClient` is only instantiated inside `CosmosConversationClient.__init__()` which is only called per-request.
 
-- [ ] T012 [US3] Update `src/api/python/app/api/routers/history.py` — remove the definitions of `CosmosConversationClient` (the entire class), `init_cosmosdb_client`, and the six module-level constants (`USE_CHAT_HISTORY_ENABLED`, `AZURE_COSMOSDB_DATABASE`, `AZURE_COSMOSDB_ACCOUNT`, `AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`, `AZURE_COSMOSDB_ENABLE_FEEDBACK`, `CHAT_HISTORY_ENABLED`). Remove their now-exclusive imports: `from azure.cosmos.aio import CosmosClient` and `from azure.cosmos import exceptions`. Add to the local imports block: `from app.data.cosmos_history import CosmosConversationClient, init_cosmosdb_client`. Keep all route handlers, service-helper functions, `generate_title`, `generate_fallback_title`, `track_event_if_configured`, and AI-related constants (`AZURE_AI_AGENT_ENDPOINT`, `AGENT_NAME_TITLE`).
+- [X] T012 [US3] Update `src/api/python/app/api/routers/history.py` — remove the definitions of `CosmosConversationClient` (the entire class), `init_cosmosdb_client`, and the six module-level constants (`USE_CHAT_HISTORY_ENABLED`, `AZURE_COSMOSDB_DATABASE`, `AZURE_COSMOSDB_ACCOUNT`, `AZURE_COSMOSDB_CONVERSATIONS_CONTAINER`, `AZURE_COSMOSDB_ENABLE_FEEDBACK`, `CHAT_HISTORY_ENABLED`). Remove their now-exclusive imports: `from azure.cosmos.aio import CosmosClient` and `from azure.cosmos import exceptions`. Add to the local imports block: `from app.data.cosmos_history import CosmosConversationClient, init_cosmosdb_client`. Keep all route handlers, service-helper functions, `generate_title`, `generate_fallback_title`, `track_event_if_configured`, and AI-related constants (`AZURE_AI_AGENT_ENDPOINT`, `AGENT_NAME_TITLE`).
 
-- [ ] T013 [US3] Update `src/test/api/python/test_history.py` — update the following categories: (A) Replace all `patch('app.api.routers.history.CosmosClient'` with `patch('app.data.cosmos_history.CosmosClient'`; (B) Replace all `from app.api.routers.history import init_cosmosdb_client` isolation imports with `from app.data.cosmos_history import init_cosmosdb_client`; (C) Replace all `from app.api.routers.history import USE_CHAT_HISTORY_ENABLED` isolation imports with `from app.data.cosmos_history import USE_CHAT_HISTORY_ENABLED`. Do NOT change `from app.api.routers.history import CosmosConversationClient` (still valid — the router imports it into its namespace) or `patch('app.api.routers.history.init_cosmosdb_client'` used in router-level tests.
+- [X] T013 [US3] Update `src/test/api/python/test_history.py` — update the following categories: (A) Replace all `patch('app.api.routers.history.CosmosClient'` with `patch('app.data.cosmos_history.CosmosClient'`; (B) Replace all `from app.api.routers.history import init_cosmosdb_client` isolation imports with `from app.data.cosmos_history import init_cosmosdb_client`; (C) Replace all `from app.api.routers.history import USE_CHAT_HISTORY_ENABLED` isolation imports with `from app.data.cosmos_history import USE_CHAT_HISTORY_ENABLED`. Do NOT change `from app.api.routers.history import CosmosConversationClient` (still valid — the router imports it into its namespace) or `patch('app.api.routers.history.init_cosmosdb_client'` used in router-level tests.
 
-- [ ] T014 [US3] Verify US3 extraction — run `cd src/api/python && python -c "import app.data.cosmos_history as c; assert hasattr(c, 'CosmosConversationClient'); assert hasattr(c, 'init_cosmosdb_client'); assert hasattr(c, 'CHAT_HISTORY_ENABLED'); print('cosmos_history OK')"` — should print `cosmos_history OK`
+- [X] T014 [US3] Verify US3 extraction — run `cd src/api/python && python -c "import app.data.cosmos_history as c; assert hasattr(c, 'CosmosConversationClient'); assert hasattr(c, 'init_cosmosdb_client'); assert hasattr(c, 'CHAT_HISTORY_ENABLED'); print('cosmos_history OK')"` — should print `cosmos_history OK`
 
-- [ ] T015 [US3] Run flake8 on modified Cosmos DB files — `flake8 src/api/python/app/data/cosmos_history.py src/api/python/app/api/routers/history.py` from repo root — fix any violations before proceeding
+- [X] T015 [US3] Run flake8 on modified Cosmos DB files — `flake8 src/api/python/app/data/cosmos_history.py src/api/python/app/api/routers/history.py` from repo root — fix any violations before proceeding
 
 **Checkpoint**: US3 complete — Cosmos DB client and factory live in `app/data/cosmos_history.py`; history.py delegates to the data module.
 
@@ -86,13 +86,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T016 [US1] Run quickstart Step 1 — `cd src/api/python && python -c "import app.data.fabric_sql; print('fabric_sql OK'); import app.data.cosmos_history; print('cosmos_history OK')"` (mock pyodbc first with `import sys, types; sys.modules['pyodbc'] = types.ModuleType('pyodbc'); ...`) — both print OK
+- [X] T016 [US1] Run quickstart Step 1 — `cd src/api/python && python -c "import app.data.fabric_sql; print('fabric_sql OK'); import app.data.cosmos_history; print('cosmos_history OK')"` (mock pyodbc first with `import sys, types; sys.modules['pyodbc'] = types.ModuleType('pyodbc'); ...`) — both print OK
 
-- [ ] T017 [US1] Run quickstart Step 2 — verify routers import after extraction and hard-move assertion passes: `cd src/api/python && python -c "<mock pyodbc>; from app.api.routers import history_sql, history, chat; assert history_sql.run_query_params.__module__ == 'app.data.fabric_sql'; print('routers import OK')"` — confirm no ImportError and assertion passes
+- [X] T017 [US1] Run quickstart Step 2 — verify routers import after extraction and hard-move assertion passes: `cd src/api/python && python -c "<mock pyodbc>; from app.api.routers import history_sql, history, chat; assert history_sql.run_query_params.__module__ == 'app.data.fabric_sql'; print('routers import OK')"` — confirm no ImportError and assertion passes
 
-- [ ] T018 [US1] Run quickstart Step 3 — `grep -n 'from app.api.routers.history_sql import' src/api/python/app/api/routers/chat.py` — should return no output (import moved to app.data.fabric_sql)
+- [X] T018 [US1] Run quickstart Step 3 — `grep -n 'from app.api.routers.history_sql import' src/api/python/app/api/routers/chat.py` — should return no output (import moved to app.data.fabric_sql)
 
-- [ ] T019 [US1] Run quickstart Step 7 spot-check — (A) `grep -n 'app.api.routers.history.CosmosClient' src/test/api/python/test_history.py` returns no output; (B) `grep -n 'app.api.routers.history_sql.AzureCliCredential' src/test/api/python/test_history_sql.py` returns no output; (C) `grep -n 'app.api.routers.history_sql.pyodbc' src/test/api/python/test_history_sql.py` returns no output
+- [X] T019 [US1] Run quickstart Step 7 spot-check — (A) `grep -n 'app.api.routers.history.CosmosClient' src/test/api/python/test_history.py` returns no output; (B) `grep -n 'app.api.routers.history_sql.AzureCliCredential' src/test/api/python/test_history_sql.py` returns no output; (C) `grep -n 'app.api.routers.history_sql.pyodbc' src/test/api/python/test_history_sql.py` returns no output
 
 **Checkpoint**: US1 verified — extraction is structurally correct; external API contract preserved.
 
@@ -106,11 +106,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T020 [US4] Run full pytest suite — `pytest src/test/api/python/ --ignore=src/test/api/python/e2e-test -q 2>&1 | tail -10` from repo root — compare pass/fail count against T001 baseline; new failures indicate a broken patch target or import error to fix
+- [X] T020 [US4] Run full pytest suite — `pytest src/test/api/python/ --ignore=src/test/api/python/e2e-test -q 2>&1 | tail -10` from repo root — compare pass/fail count against T001 baseline; new failures indicate a broken patch target or import error to fix
 
-- [ ] T021 [US4] Run flake8 on full app package — `flake8 src/api/python/app/` from repo root — confirm zero violations
+- [X] T021 [US4] Run flake8 on full app package — `flake8 src/api/python/app/` from repo root — confirm zero violations
 
-- [ ] T022 [US4] If pytest shows new failures: diagnose root cause — most likely a patch target still pointing to old module path; re-read the failing test and apply the correct fix from the Test Patch Target Migration table in plan.md
+- [X] T022 [US4] If pytest shows new failures: diagnose root cause — most likely a patch target still pointing to old module path; re-read the failing test and apply the correct fix from the Test Patch Target Migration table in plan.md
 
 **Checkpoint**: US4 verified — test suite stable; flake8 clean.
 
@@ -118,9 +118,9 @@
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T023 [P] Verify `src/api/python/app/data/__init__.py` remains empty (0 bytes) — no accidental re-exports were added
-- [ ] T024 [P] Confirm no references to old data-symbol definitions remain in router files — `grep -n "class CosmosConversationClient\|def get_fabric_db_connection\|def run_query_params\|def run_nonquery_params" src/api/python/app/api/routers/history_sql.py src/api/python/app/api/routers/history.py` — should return no output
-- [ ] T025 Run complete quickstart validation sequence (Steps 1–7) as a final end-to-end check per `specs/003-data-access-layer/quickstart.md`
+- [X] T023 [P] Verify `src/api/python/app/data/__init__.py` remains empty (0 bytes) — no accidental re-exports were added
+- [X] T024 [P] Confirm no references to old data-symbol definitions remain in router files — `grep -n "class CosmosConversationClient\|def get_fabric_db_connection\|def run_query_params\|def run_nonquery_params" src/api/python/app/api/routers/history_sql.py src/api/python/app/api/routers/history.py` — should return no output
+- [X] T025 Run complete quickstart validation sequence (Steps 1–7) as a final end-to-end check per `specs/003-data-access-layer/quickstart.md`
 
 ---
 
