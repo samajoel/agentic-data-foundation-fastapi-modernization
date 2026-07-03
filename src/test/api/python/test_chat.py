@@ -58,14 +58,14 @@ class TestExpCache:
 
     def test_initialization(self):
         """Test ExpCache initialization."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         cache = ExpCache(maxsize=100, ttl=300.0)
         assert cache.maxsize == 100
         assert cache.ttl == 300.0
 
     def test_basic_operations(self):
         """Test basic cache operations."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         cache = ExpCache(maxsize=10, ttl=60.0)
         cache["key1"] = "value1"
         assert cache["key1"] == "value1"
@@ -73,11 +73,11 @@ class TestExpCache:
 
     def test_popitem_triggers_cleanup(self):
         """Test that popitem is overridden."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         cache = ExpCache(maxsize=2, ttl=60.0)
 
         # Mock asyncio.create_task to prevent unawaited coroutine warning
-        with patch('app.api.routers.chat.asyncio.create_task') as mock_create_task:
+        with patch('app.agents.chat_orchestrator.asyncio.create_task') as mock_create_task:
             cache["key1"] = "thread1"
             cache["key2"] = "thread2"
             # Trigger eviction
@@ -89,11 +89,11 @@ class TestExpCache:
     @pytest.mark.asyncio
     async def test_delete_thread_async(self):
         """Test async thread deletion."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         cache = ExpCache(maxsize=10, ttl=60.0)
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_client:
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_client:
 
             mock_credential = AsyncMock()
             mock_credential.close = AsyncMock()
@@ -119,7 +119,7 @@ class TestExpCache:
 
     def test_expire_removes_old_items(self):
         """Test that expire removes expired items."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         import time
 
         cache = ExpCache(maxsize=10, ttl=0.1)
@@ -128,7 +128,7 @@ class TestExpCache:
         time.sleep(0.15)
 
         # Mock asyncio.create_task to prevent unawaited coroutine warning
-        with patch('app.api.routers.chat.asyncio.create_task'):
+        with patch('app.agents.chat_orchestrator.asyncio.create_task'):
             cache.expire()
 
         assert "key1" not in cache
@@ -139,23 +139,23 @@ class TestHelperFunctions:
 
     def test_track_event_if_configured_without_key(self):
         """Test track_event when no instrumentation key is set."""
-        from app.api.routers.chat import track_event_if_configured
+        from app.agents.chat_orchestrator import track_event_if_configured
 
-        with patch('app.api.routers.chat.track_event') as mock_track:
+        with patch('app.agents.chat_orchestrator.track_event') as mock_track:
             track_event_if_configured("TestEvent", {"key": "value"})
             # Should not call track_event when no instrumentation key
             mock_track.assert_not_called()
 
     def test_get_thread_cache_singleton(self):
         """Test that get_thread_cache returns a singleton."""
-        from app.api.routers.chat import get_thread_cache
+        from app.agents.chat_orchestrator import get_thread_cache
         cache1 = get_thread_cache()
         cache2 = get_thread_cache()
         assert cache1 is cache2
 
     def test_get_thread_cache_properties(self):
         """Test cache properties."""
-        from app.api.routers.chat import get_thread_cache
+        from app.agents.chat_orchestrator import get_thread_cache
         cache = get_thread_cache()
         assert cache.maxsize == 1000
         assert cache.ttl == 3600.0
@@ -231,13 +231,13 @@ class TestStreamOpenAIText:
     @pytest.mark.asyncio
     async def test_with_valid_query(self):
         """Test stream_openai_text with valid query."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             # Setup mocks
             mock_cred.return_value = AsyncMock()
@@ -277,13 +277,13 @@ class TestStreamOpenAIText:
     @pytest.mark.asyncio
     async def test_fallback_response_on_empty_stream(self):
         """Test fallback response when stream is empty."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             mock_cred.return_value = AsyncMock()
             mock_cred.return_value.close = AsyncMock()
@@ -319,7 +319,7 @@ class TestStreamOpenAIText:
     @pytest.mark.asyncio
     async def test_workshop_passes_conversation_id_in_options(self):
         """Verify workshop mode agent.run is called with options={'conversation_id': conv_id}."""
-        from app.api.routers.chat import stream_openai_text_workshop
+        from app.agents.chat_orchestrator import stream_openai_text_workshop
 
         mock_chunk = Mock()
         mock_chunk.text = "Hello"
@@ -343,10 +343,10 @@ class TestStreamOpenAIText:
         mock_proj_inst.__aenter__ = AsyncMock(return_value=mock_proj_inst)
         mock_proj_inst.__aexit__ = AsyncMock()
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
-             patch('app.api.routers.chat.FoundryAgent', return_value=mock_agent), \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
+             patch('app.agents.chat_orchestrator.FoundryAgent', return_value=mock_agent), \
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache, \
              patch('app.api.routers.history_sql.get_azure_sql_connection', new_callable=AsyncMock, return_value=Mock()) as mock_sql, \
              patch('app.api.routers.history_sql.get_fabric_db_connection', new_callable=AsyncMock, return_value=Mock()), \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool:
@@ -375,9 +375,9 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_expcache_popitem_lru_eviction(self):
         """Test LRU eviction triggers thread deletion."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
 
-        with patch('app.api.routers.chat.asyncio.create_task') as mock_create_task:
+        with patch('app.agents.chat_orchestrator.asyncio.create_task') as mock_create_task:
             cache = ExpCache(maxsize=2, ttl=300.0)
             cache["key1"] = "thread1"
             cache["key2"] = "thread2"
@@ -391,12 +391,12 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_delete_thread_async_error_handling(self):
         """Test error handling in _delete_thread_async."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
 
         cache = ExpCache(maxsize=10, ttl=60.0)
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_client:
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_client:
 
             # Mock credential
             mock_credential = AsyncMock()
@@ -418,13 +418,13 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_stream_openai_text_with_cached_thread(self):
         """Test stream_openai_text using cached thread ID."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             mock_cred.return_value = AsyncMock()
             mock_cred.return_value.close = AsyncMock()
@@ -466,10 +466,10 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_stream_openai_text_db_connection_failure(self):
         """Test handling of database connection failure - logs error and yields fallback."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db:
 
             mock_cred.return_value = AsyncMock()
@@ -506,8 +506,8 @@ class TestAdditionalCoverage:
             yield ("assistant", "Hello")
             yield ("assistant", " World")
 
-        with patch('app.api.routers.chat.stream_openai_text', side_effect=mock_stream), \
-             patch('app.api.routers.chat.stream_openai_text_workshop', side_effect=mock_stream):
+        with patch('app.agents.chat_orchestrator.stream_openai_text', side_effect=mock_stream), \
+             patch('app.agents.chat_orchestrator.stream_openai_text_workshop', side_effect=mock_stream):
             results = []
             generator = await stream_chat_request("123", "test")
             async for chunk in generator:
@@ -552,13 +552,13 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_stream_openai_text_creates_new_conversation(self):
         """Test creating new conversation when no cached thread exists."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             mock_cred.return_value = AsyncMock()
             mock_cred.return_value.close = AsyncMock()
@@ -602,13 +602,13 @@ class TestAdditionalCoverage:
     @pytest.mark.asyncio
     async def test_stream_openai_text_single_content_response(self):
         """Test that a single content item response is streamed correctly."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             mock_cred.return_value = AsyncMock()
             mock_cred.return_value.close = AsyncMock()
@@ -654,7 +654,7 @@ class TestApplicationInsightsCoverage:
     @pytest.mark.asyncio
     async def test_expcache_thread_retrieval_on_expire(self):
         """Test ExpCache retrieving thread ID during expiration."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
 
         cache = ExpCache(maxsize=2, ttl=0.1)
         cache["key1"] = "thread_id_1"
@@ -674,13 +674,13 @@ class TestApplicationInsightsCoverage:
     @pytest.mark.asyncio
     async def test_stream_openai_text_with_existing_thread(self):
         """Test using cached thread."""
-        from app.api.routers.chat import stream_openai_text
+        from app.agents.chat_orchestrator import stream_openai_text
 
-        with patch('app.api.routers.chat.get_azure_credential_async') as mock_cred, \
-             patch('app.api.routers.chat.AIProjectClient') as mock_project, \
+        with patch('app.agents.chat_orchestrator.get_azure_credential_async') as mock_cred, \
+             patch('app.agents.chat_orchestrator.AIProjectClient') as mock_project, \
              patch('app.api.routers.history_sql.get_db_connection') as mock_db, \
              patch('app.api.routers.history_sql.SqlQueryTool') as mock_tool, \
-             patch('app.api.routers.chat.get_thread_cache') as mock_cache:
+             patch('app.agents.chat_orchestrator.get_thread_cache') as mock_cache:
 
             mock_cred.return_value = AsyncMock()
             mock_cred.return_value.close = AsyncMock()
@@ -751,7 +751,7 @@ class TestParseMcpDocs:
 
     def test_parse_mcp_docs_basic(self):
         """Test parsing JSON doc blocks from MCP output text."""
-        from app.api.routers.chat import _parse_mcp_docs
+        from app.agents.chat_orchestrator import _parse_mcp_docs
 
         mcp_text = (
             'Summary text【4:0†source.pdf】'
@@ -770,7 +770,7 @@ class TestParseMcpDocs:
 
     def test_parse_mcp_docs_no_json(self):
         """Test parsing when sections have no JSON blocks."""
-        from app.api.routers.chat import _parse_mcp_docs
+        from app.agents.chat_orchestrator import _parse_mcp_docs
 
         mcp_text = 'Summary【4:0†src】Plain text only【4:1†src】No JSON here'
         mcp_docs = {}
@@ -780,7 +780,7 @@ class TestParseMcpDocs:
 
     def test_parse_mcp_docs_malformed_json(self):
         """Test parsing with malformed JSON fragments."""
-        from app.api.routers.chat import _parse_mcp_docs
+        from app.agents.chat_orchestrator import _parse_mcp_docs
 
         mcp_text = '【4:1†src】{"id": "doc1", broken json}'
         mcp_docs = {}
@@ -790,7 +790,7 @@ class TestParseMcpDocs:
 
     def test_parse_mcp_docs_empty_text(self):
         """Test parsing empty text."""
-        from app.api.routers.chat import _parse_mcp_docs
+        from app.agents.chat_orchestrator import _parse_mcp_docs
 
         mcp_docs = {}
         _parse_mcp_docs("", mcp_docs)
@@ -803,7 +803,7 @@ class TestExtractMcpFromRaw:
 
     def test_direct_output(self):
         """Test extraction from McpCall with direct string output."""
-        from app.api.routers.chat import _extract_mcp_from_raw
+        from app.agents.chat_orchestrator import _extract_mcp_from_raw
 
         raw = Mock()
         raw.output = '【4:1†src.pdf】{"id": "abc", "title": "T", "source": "src.pdf", "content": "c"}'
@@ -817,7 +817,7 @@ class TestExtractMcpFromRaw:
 
     def test_response_event(self):
         """Test extraction from ResponseCompletedEvent with nested output."""
-        from app.api.routers.chat import _extract_mcp_from_raw
+        from app.agents.chat_orchestrator import _extract_mcp_from_raw
 
         inner_item = Mock()
         inner_item.output = '【4:1†s.pdf】{"id": "x1", "title": "T", "source": "s.pdf", "content": "c"}'
@@ -835,7 +835,7 @@ class TestExtractMcpFromRaw:
 
     def test_no_output(self):
         """Test extraction with no usable output."""
-        from app.api.routers.chat import _extract_mcp_from_raw
+        from app.agents.chat_orchestrator import _extract_mcp_from_raw
 
         raw = Mock()
         raw.output = None
@@ -852,7 +852,7 @@ class TestMarkerRegex:
 
     def test_matches_valid_marker(self):
         """Test that marker regex matches valid markers."""
-        from app.api.routers.chat import _MARKER_RE
+        from app.agents.chat_orchestrator import _MARKER_RE
 
         m = _MARKER_RE.search('text【4:1†source.pdf】more')
 
@@ -862,7 +862,7 @@ class TestMarkerRegex:
 
     def test_matches_section_zero(self):
         """Test that marker regex matches section 0."""
-        from app.api.routers.chat import _MARKER_RE
+        from app.agents.chat_orchestrator import _MARKER_RE
 
         m = _MARKER_RE.search('【4:0†summary】')
 
@@ -871,7 +871,7 @@ class TestMarkerRegex:
 
     def test_no_match_plain_text(self):
         """Test that marker regex does not match plain text."""
-        from app.api.routers.chat import _MARKER_RE
+        from app.agents.chat_orchestrator import _MARKER_RE
 
         m = _MARKER_RE.search('no markers here')
 
@@ -879,7 +879,7 @@ class TestMarkerRegex:
 
     def test_finds_multiple_markers(self):
         """Test finding all markers in text."""
-        from app.api.routers.chat import _MARKER_RE
+        from app.agents.chat_orchestrator import _MARKER_RE
 
         text = 'A【4:0†s】B【4:1†a.pdf】C【4:2†b.pdf】'
         matches = list(_MARKER_RE.finditer(text))
@@ -1009,8 +1009,8 @@ class TestStreamChatRequestDelta:
             yield ("assistant", "Hello world")
             yield ("tool", '[{"url":"u","source":"s","id":"i"}]')
 
-        with patch('app.api.routers.chat.stream_openai_text_workshop', side_effect=mock_gen), \
-             patch('app.api.routers.chat.IS_WORKSHOP', True):
+        with patch('app.agents.chat_orchestrator.stream_openai_text_workshop', side_effect=mock_gen), \
+             patch('app.agents.chat_orchestrator.IS_WORKSHOP', True):
             gen = await stream_chat_request("conv1", "test query")
             chunks = []
             async for chunk in gen:
@@ -1029,8 +1029,8 @@ class TestStreamChatRequestDelta:
         async def mock_gen(*args, **kwargs):
             yield "Hello world"
 
-        with patch('app.api.routers.chat.stream_openai_text', side_effect=mock_gen), \
-             patch('app.api.routers.chat.IS_WORKSHOP', False):
+        with patch('app.agents.chat_orchestrator.stream_openai_text', side_effect=mock_gen), \
+             patch('app.agents.chat_orchestrator.IS_WORKSHOP', False):
             gen = await stream_chat_request("conv1", "test query")
             chunks = []
             async for chunk in gen:
@@ -1058,7 +1058,7 @@ class TestMissingLineCoverage:
         if 'app.api.routers.chat' in sys.modules:
             del sys.modules['app.api.routers.chat']
 
-        with patch('app.api.routers.chat.logging.warning') as mock_warning:
+        with patch('app.agents.chat_orchestrator.logging.warning') as mock_warning:
             chat_module = importlib.import_module('app.api.routers.chat')
             importlib.reload(chat_module)
             # The warning should have been called during import
@@ -1066,12 +1066,12 @@ class TestMissingLineCoverage:
 
     def test_track_event_if_configured_without_instrumentation_key(self, monkeypatch):
         """Test line 125: track_event_if_configured when APPLICATIONINSIGHTS_CONNECTION_STRING is not set."""
-        from app.api.routers.chat import track_event_if_configured
+        from app.agents.chat_orchestrator import track_event_if_configured
 
         # Ensure no instrumentation key
         monkeypatch.delenv("APPLICATIONINSIGHTS_CONNECTION_STRING", raising=False)
 
-        with patch('app.api.routers.chat.logging.warning') as mock_warning:
+        with patch('app.agents.chat_orchestrator.logging.warning') as mock_warning:
             track_event_if_configured("test_event", {"data": "value"})
             mock_warning.assert_called_once()
             assert "Skipping track_event" in str(mock_warning.call_args)
@@ -1082,7 +1082,7 @@ class TestAdditionalExpCacheCoverage:
 
     def test_expire_exception_handling(self):
         """Test exception handling in expire method."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
         import time
 
         cache = ExpCache(maxsize=10, ttl=0.1)
@@ -1091,8 +1091,8 @@ class TestAdditionalExpCacheCoverage:
         time.sleep(0.15)
 
         # Mock asyncio.create_task to raise an exception
-        with patch('app.api.routers.chat.asyncio.create_task', side_effect=RuntimeError("Task creation failed")), \
-             patch('app.api.routers.chat.logger.error') as mock_logger:
+        with patch('app.agents.chat_orchestrator.asyncio.create_task', side_effect=RuntimeError("Task creation failed")), \
+             patch('app.agents.chat_orchestrator.logger.error') as mock_logger:
             cache.expire()
 
             # Verify error was logged
@@ -1101,15 +1101,15 @@ class TestAdditionalExpCacheCoverage:
 
     def test_popitem_exception_handling(self):
         """Test exception handling in popitem method."""
-        from app.api.routers.chat import ExpCache
+        from app.agents.chat_orchestrator import ExpCache
 
         cache = ExpCache(maxsize=2, ttl=60.0)
         cache["key1"] = "thread1"
         cache["key2"] = "thread2"
 
         # Mock asyncio.create_task to raise an exception
-        with patch('app.api.routers.chat.asyncio.create_task', side_effect=RuntimeError("Task creation failed")), \
-             patch('app.api.routers.chat.logger.error') as mock_logger:
+        with patch('app.agents.chat_orchestrator.asyncio.create_task', side_effect=RuntimeError("Task creation failed")), \
+             patch('app.agents.chat_orchestrator.logger.error') as mock_logger:
             # Trigger eviction
             cache["key3"] = "thread3"
 
@@ -1123,10 +1123,10 @@ class TestTrackEventWithKey:
 
     def test_track_event_with_instrumentation_key(self, monkeypatch):
         """Test track_event called when instrumentation key exists."""
-        from app.api.routers.chat import track_event_if_configured
+        from app.agents.chat_orchestrator import track_event_if_configured
 
         monkeypatch.setenv("APPLICATIONINSIGHTS_CONNECTION_STRING", "InstrumentationKey=test-key")
 
-        with patch('app.api.routers.chat.track_event') as mock_track:
+        with patch('app.agents.chat_orchestrator.track_event') as mock_track:
             track_event_if_configured("test_event", {"key": "value"})
             mock_track.assert_called_once_with("test_event", {"key": "value"})
