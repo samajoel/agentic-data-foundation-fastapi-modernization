@@ -140,17 +140,20 @@ All environment variables consumed by the Python FastAPI backend. Variables are 
 - **Environment**: `local` (`.env` only), `azure` (Azure App Service only), `both`
 - **Required**: `required`, `optional`, `conditional`
 
-### Domain 1: Azure AI Foundry / Agent Framework
+### Domain 1: Azure AI Foundry / Agent Framework / OpenAI
 
 | Variable | Environment | Required | Description |
 |----------|------------|----------|-------------|
-| `AZURE_AI_AGENT_ENDPOINT` | both | required | Azure AI Foundry endpoint URL for the agent project |
-| `AZURE_AI_AGENT_PROJECT_NAME` | both | required | Name of the Azure AI Foundry project |
-| `AZURE_AI_AGENT_ID` | both | required | ID of the deployed agent within the project |
-| `AZURE_AI_SUBSCRIPTION_ID` | both | required | Azure subscription ID for agent resource |
-| `AZURE_AI_RESOURCE_GROUP` | both | required | Resource group containing the AI Foundry resource |
+| `AZURE_AI_AGENT_ENDPOINT` | both | required | Azure AI Foundry project endpoint URL for the agent |
+| `AZURE_AI_AGENT_API_VERSION` | both | optional | Azure AI Agent API version; defaults to SDK default |
+| `AZURE_AI_AGENT_MODEL_DEPLOYMENT_NAME` | both | required | Model deployment name for the agent (e.g., `gpt-4o`) |
+| `AZURE_OPENAI_ENDPOINT` | both | required | Azure OpenAI service endpoint URL |
+| `AZURE_OPENAI_RESOURCE` | both | required | Azure OpenAI resource name |
+| `AZURE_ENV_GPT_MODEL_NAME` | both | required | GPT model deployment name (e.g., `gpt-4o`) |
+| `AZURE_ENV_EMBEDDING_DEPLOYMENT_NAME` | both | required | Embedding model deployment name |
+| `AZURE_ENV_OPENAI_API_VERSION` | both | optional | OpenAI API version string; defaults to SDK default |
 
-**Local setup**: Set all five in `.env`. Managed Identity handles auth in Azure; `DefaultAzureCredential` with local credentials (e.g., `az login`) handles auth locally.
+**Local setup**: Set all required vars in `.env`. Managed Identity handles auth in Azure; `DefaultAzureCredential` with local credentials (e.g., `az login`) handles auth locally.
 
 ---
 
@@ -158,15 +161,17 @@ All environment variables consumed by the Python FastAPI backend. Variables are 
 
 | Variable | Environment | Required | Description |
 |----------|------------|----------|-------------|
-| `FABRIC_SQL_SERVER` | both | conditional | Fabric SQL server hostname (FQDN) |
-| `FABRIC_SQL_DATABASE` | both | conditional | Database name on the Fabric SQL server |
+| `FABRIC_SQL_SERVER` | local | conditional | Fabric SQL server hostname (FQDN) for local/non-Azure-SQL mode |
+| `FABRIC_SQL_DATABASE` | local | conditional | Database name on the Fabric SQL server |
+| `FABRIC_SQL_CONNECTION_STRING` | local | conditional | Full ODBC connection string (alternative to SERVER+DATABASE+USER) |
 | `FABRIC_SQL_USERNAME` | local | conditional | SQL auth username (local dev only; Managed Identity used in Azure) |
 | `FABRIC_SQL_PASSWORD` | local | conditional | SQL auth password (local dev only; use `.env`, never commit) |
-| `FABRIC_SQL_DRIVER` | both | optional | ODBC driver string; defaults to `ODBC Driver 18 for SQL Server` |
-| `IS_WORKSHOP` | both | optional | `true` = workshop mode (Cosmos DB only, no Fabric SQL); default `false` |
-| `AZURE_ENV_ONLY` | both | optional | `true` = skip Fabric SQL connection at startup; default `false` |
+| `FABRIC_SQL_DRIVER` | local | optional | ODBC driver string; defaults to `ODBC Driver 18 for SQL Server` |
+| `AZURE_SQLDB_SERVER` | azure | conditional | Azure SQL server hostname; used when `IS_WORKSHOP=true` and `AZURE_ENV_ONLY=true` |
+| `AZURE_SQLDB_DATABASE` | azure | conditional | Azure SQL database name; used when `IS_WORKSHOP=true` and `AZURE_ENV_ONLY=true` |
+| `AZURE_SQLDB_USER_MID` | azure | conditional | Managed Identity client ID for Azure SQL access (Azure-only) |
 
-**Conditional**: Fabric SQL variables are only required when `IS_WORKSHOP=false` and `AZURE_ENV_ONLY=false`. When `IS_WORKSHOP=true`, the data layer uses Cosmos DB only.
+**Conditional**: Fabric SQL / Azure SQL variables are only required when `IS_WORKSHOP=false` or when `AZURE_ENV_ONLY=true`. When `IS_WORKSHOP=true` and `AZURE_ENV_ONLY=false`, the data layer uses Cosmos DB only with local Fabric SQL.
 
 ---
 
@@ -187,11 +192,11 @@ All environment variables consumed by the Python FastAPI backend. Variables are 
 
 | Variable | Environment | Required | Description |
 |----------|------------|----------|-------------|
-| `AZURE_SEARCH_ENDPOINT` | both | conditional | Azure AI Search service endpoint URL (preferred name) |
-| `AZURE_AI_SEARCH_ENDPOINT` | both | conditional | Alias for `AZURE_SEARCH_ENDPOINT` (either name accepted) |
-| `AZURE_SEARCH_INDEX` | both | conditional | Index name to query for document retrieval |
+| `AZURE_AI_SEARCH_ENDPOINT` | both | conditional | Azure AI Search service endpoint URL (bicep-canonical name) |
+| `AZURE_AI_SEARCH_INDEX` | both | conditional | Index name to query for document retrieval |
+| `AZURE_AI_SEARCH_CONNECTION_NAME` | azure | conditional | AI Foundry connection name for Azure AI Search (Azure-only) |
 
-**Note**: `AZURE_SEARCH_KEY` is present in some older deployment templates but key-based auth is deprecated. Managed Identity is the approved auth pattern. If `AZURE_SEARCH_ENDPOINT` and `AZURE_SEARCH_INDEX` are absent, `GET /fetch-azure-search-content` returns a 500 configuration error at request time (not a startup failure).
+**Note**: Some older `.env` templates use `AZURE_SEARCH_ENDPOINT` and `AZURE_SEARCH_INDEX` (without the `AI_` prefix). Both forms are accepted by the application. The bicep-canonical names use the `AZURE_AI_` prefix. Key-based auth (`AZURE_SEARCH_KEY`) is deprecated; Managed Identity is the approved pattern. If the endpoint and index are absent, `GET /fetch-azure-search-content` returns a 500 configuration error at request time (not a startup failure).
 
 ---
 
@@ -201,7 +206,9 @@ All environment variables consumed by the Python FastAPI backend. Variables are 
 |----------|------------|----------|-------------|
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | both | optional | Azure Monitor connection string; telemetry is disabled (with warning) if absent |
 | `APPINSIGHTS_INSTRUMENTATIONKEY` | azure | optional | Legacy instrumentation key; injected by `deploy_backend_custom.bicep`; secondary fallback for Azure Monitor SDK |
-| `AZURE_BASIC_LOGGING_LEVEL` | both | optional | Python log level string (e.g., `INFO`, `DEBUG`, `WARNING`); defaults to `WARNING` |
+| `AZURE_BASIC_LOGGING_LEVEL` | both | optional | Python root log level (e.g., `INFO`, `DEBUG`, `WARNING`); default `INFO` |
+| `AZURE_PACKAGE_LOGGING_LEVEL` | both | optional | Log level for noisy Azure SDK / third-party packages; default `WARNING` |
+| `AZURE_LOGGING_PACKAGES` | both | optional | Comma-separated list of additional package loggers to suppress; default empty |
 
 **Behavior when absent**: Backend starts and serves all requests normally. A single `WARNING` log is emitted at startup. No telemetry is sent to Azure.
 

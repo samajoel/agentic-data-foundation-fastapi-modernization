@@ -15,3 +15,8 @@
 scriptenv/
 __pycache__/
 /venv1/
+.env
+.env.*
+!.env.example
+.DS_Store
+*.pyc
