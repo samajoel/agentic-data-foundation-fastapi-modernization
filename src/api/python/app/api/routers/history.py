@@ -156,9 +156,6 @@ async def update_conversation(user_id: str, request_json: dict):
         )
         conversation_id = conversation["id"]
 
-    # Format the incoming message object in the "chat/completions" messages format then write it to the
-    # conversation history in cosmos
-    messages = request_json["messages"]
     if len(messages) > 0 and messages[0]["role"] == "user":
         user_message = next(
             (
@@ -183,9 +180,6 @@ async def update_conversation(user_id: str, request_json: dict):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User message not found")
 
-    # Format the incoming message object in the "chat/completions" messages format
-    # then write it to the conversation history in cosmos
-    messages = request_json["messages"]
     if len(messages) > 0 and messages[-1]["role"] in ("assistant", "error"):
         if len(messages) > 1 and messages[-2].get("role", None) == "tool":
             # write the tool message first
@@ -430,7 +424,7 @@ async def clear_messages(user_id: str, conversation_id: str) -> bool:
             logger.warning(f"Conversation {conversation_id} not found.")
             return False
 
-        if conversation["user_id"] != user_id:
+        if conversation["userId"] != user_id:
             logger.warning(
                 f"User {user_id} does not have permission to clear messages in {conversation_id}.")
             return False

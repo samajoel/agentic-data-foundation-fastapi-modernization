@@ -90,9 +90,11 @@ class CosmosConversationClient:
         return True, "CosmosDB client initialized successfully"
 
     async def create_conversation(
-        self, user_id, conversation_id=str(uuid.uuid4()), title=""
+        self, user_id, conversation_id=None, title=""
     ):
         """Create a new conversation in CosmosDB."""
+        if conversation_id is None:
+            conversation_id = str(uuid.uuid4())
         conversation = {
             "id": conversation_id,
             "type": "conversation",

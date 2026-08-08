@@ -292,6 +292,38 @@ class TestCosmosClient:
             assert result is False
     
     @pytest.mark.asyncio
+    async def test_create_conversation_generates_unique_ids(self):
+        from app.data.cosmos_history import CosmosConversationClient
+
+        mock_cred = AsyncMock()
+        mock_cosmos = MagicMock()
+        mock_db = MagicMock()
+        mock_container = AsyncMock()
+
+        with patch('app.data.cosmos_history.CosmosClient', return_value=mock_cosmos):
+            mock_cosmos.get_database_client = MagicMock(return_value=mock_db)
+            mock_db.get_container_client = MagicMock(return_value=mock_container)
+
+            client = CosmosConversationClient(
+                cosmosdb_endpoint="https://test.documents.azure.com",
+                credential=mock_cred,
+                database_name="testdb",
+                container_name="testcontainer"
+            )
+
+            # Capture which id each call writes by returning the upserted item
+            def capture_upsert(item):
+                import asyncio
+                async def _return():
+                    return item
+                return _return()
+            mock_container.upsert_item = MagicMock(side_effect=capture_upsert)
+
+            result1 = await client.create_conversation("user123")
+            result2 = await client.create_conversation("user123")
+            assert result1["id"] != result2["id"], "Each call without explicit ID must produce a distinct UUID"
+
+    @pytest.mark.asyncio
     async def test_upsert_conversation(self):
         from app.data.cosmos_history import CosmosConversationClient
         
@@ -943,8 +975,7 @@ class TestHelperFunctions:
         monkeypatch.setenv("USE_CHAT_HISTORY_ENABLED", "true")
         
         mock_client = AsyncMock()
-        # Note: code checks conversation["user_id"] not conversation["userId"]
-        mock_client.get_conversation = AsyncMock(return_value={"id": "conv123", "user_id": "user123"})
+        mock_client.get_conversation = AsyncMock(return_value={"id": "conv123", "userId": "user123"})
         mock_client.delete_messages = AsyncMock(return_value=[])
         
         with patch('app.api.routers.history.init_cosmosdb_client', return_value=mock_client):
@@ -952,11 +983,26 @@ class TestHelperFunctions:
             assert result is True
     
     @pytest.mark.asyncio
+    async def test_clear_messages_rejects_different_user(self, monkeypatch):
+        from app.api.routers.history import clear_messages
+
+        monkeypatch.setenv("USE_CHAT_HISTORY_ENABLED", "true")
+
+        mock_client = AsyncMock()
+        mock_client.get_conversation = AsyncMock(return_value={"id": "conv123", "userId": "other_user"})
+        mock_client.delete_messages = AsyncMock(return_value=[])
+
+        with patch('app.api.routers.history.init_cosmosdb_client', return_value=mock_client):
+            result = await clear_messages("user123", "conv123")
+            assert result is False
+            mock_client.delete_messages.assert_not_called()
+
+    @pytest.mark.asyncio
     async def test_ensure_cosmos_success(self, monkeypatch):
         from app.api.routers.history import ensure_cosmos
-        
+
         monkeypatch.setenv("USE_CHAT_HISTORY_ENABLED", "true")
-        
+
         mock_client = AsyncMock()
         mock_client.ensure = AsyncMock(return_value=(True, "Success"))
         
