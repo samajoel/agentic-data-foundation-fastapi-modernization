@@ -46,15 +46,16 @@ useEffect(() => {
         chartContent.type === "horizontalBar"
           ? chartTypes.barChart
           : (chartContent.type as keyof ChartTypeRegistry),
-      data: { ...chartContent.data },
-      options: {
-        ...chartContent?.options,
-        responsive: false,
-        indexAxis:
-          chartContent.type === "horizontalBar"
-            ? "y"
-            : chartContent?.options?.indexAxis,
-      },
+ data: structuredClone(chartContent.data),
+
+options: {
+  ...structuredClone(chartContent?.options || {}),
+  responsive: false,
+  indexAxis:
+    chartContent.type === "horizontalBar"
+      ? "y"
+      : chartContent?.options?.indexAxis,
+},
     };
 
     // Restore tooltip callback if it’s missing or a string placeholder
