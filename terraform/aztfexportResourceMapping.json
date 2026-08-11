@@ -1,0 +1,102 @@
+{
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab",
+		"resource_type": "azurerm_resource_group",
+		"resource_name": "res-0"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai",
+		"resource_type": "azurerm_cognitive_account",
+		"resource_name": "res-1"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai/deployments/gpt-4.1-mini": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai/deployments/gpt-4.1-mini",
+		"resource_type": "azurerm_cognitive_deployment",
+		"resource_name": "res-4"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai/projects/proj-default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai/projects/proj-default",
+		"resource_type": "azurerm_cognitive_account_project",
+		"resource_name": "res-5"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev",
+		"resource_type": "azurerm_cosmosdb_account",
+		"resource_name": "res-10"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/SQLDATABASES/chat-history": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev/sqlDatabases/chat-history",
+		"resource_type": "azurerm_cosmosdb_sql_database",
+		"resource_name": "res-11"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/SQLDATABASES/chat-history/CONTAINERS/conversations": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev/sqlDatabases/chat-history/containers/conversations",
+		"resource_type": "azurerm_cosmosdb_sql_container",
+		"resource_name": "res-12"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleAssignments/8a463205-a8cc-40cf-a481-e80ac4796f3b": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleAssignments/8a463205-a8cc-40cf-a481-e80ac4796f3b",
+		"resource_type": "azurerm_cosmosdb_sql_role_assignment",
+		"resource_name": "res-19"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001",
+		"resource_type": "azurerm_cosmosdb_sql_role_definition",
+		"resource_name": "res-20"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDB/databaseAccounts/cosmos-agentic-joel-dev/sqlRoleDefinitions/00000000-0000-0000-0000-000000000002",
+		"resource_type": "azurerm_cosmosdb_sql_role_definition",
+		"resource_name": "res-21"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev",
+		"resource_type": "azurerm_mssql_server",
+		"resource_name": "res-25"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db",
+		"resource_type": "azurerm_mssql_database",
+		"resource_name": "res-37"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/extendedAuditingSettings/Default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/extendedAuditingSettings/Default",
+		"resource_type": "azurerm_mssql_database_extended_auditing_policy",
+		"resource_name": "res-43"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/devOpsAuditingSettings/Default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/devOpsAuditingSettings/Default",
+		"resource_type": "azurerm_mssql_server_microsoft_support_auditing_policy",
+		"resource_name": "res-58"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/encryptionProtector/current": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/encryptionProtector/current",
+		"resource_type": "azurerm_mssql_server_transparent_data_encryption",
+		"resource_name": "res-59"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/extendedAuditingSettings/Default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/extendedAuditingSettings/Default",
+		"resource_type": "azurerm_mssql_server_extended_auditing_policy",
+		"resource_name": "res-60"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/firewallRules/ClientIPAddress_2026-8-7_19-42-58": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/firewallRules/ClientIPAddress_2026-8-7_19-42-58",
+		"resource_type": "azurerm_mssql_firewall_rule",
+		"resource_name": "res-61"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/firewallRules/ClientIp-2026-7-25_18-3-18": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/firewallRules/ClientIp-2026-7-25_18-3-18",
+		"resource_type": "azurerm_mssql_firewall_rule",
+		"resource_name": "res-62"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/securityAlertPolicies/Default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/securityAlertPolicies/Default",
+		"resource_type": "azurerm_mssql_server_security_alert_policy",
+		"resource_name": "res-64"
+	},
+	"/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/vulnerabilityAssessments/Default": {
+		"resource_id": "/subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/vulnerabilityAssessments/Default",
+		"resource_type": "azurerm_mssql_server_vulnerability_assessment",
+		"resource_name": "res-66"
+	}
+}

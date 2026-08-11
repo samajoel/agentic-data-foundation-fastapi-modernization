@@ -1,0 +1,24 @@
+# Terraform state files — never commit
+*.tfstate
+*.tfstate.backup
+*.tfstate.*.backup
+
+# Local variable files — may contain real subscription/tenant IDs
+terraform.tfvars
+*.auto.tfvars
+
+# Provider plugin cache — binary artifacts
+.terraform/
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Override files (not intended for version control)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# .terraform.lock.hcl IS version-controlled (provider lock file)
+# Do NOT add .terraform.lock.hcl here

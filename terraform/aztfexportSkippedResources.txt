@@ -1,0 +1,35 @@
+Following resources are marked to be skipped:
+
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.CognitiveServices/accounts/ai-brain-openai/defenderForAISettings/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/cassandraRoleDefinitions/00000000-0000-0000-0000-000000000003
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/cassandraRoleDefinitions/00000000-0000-0000-0000-000000000004
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/gremlinRoleDefinitions/00000000-0000-0000-0000-000000000003
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/gremlinRoleDefinitions/00000000-0000-0000-0000-000000000004
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/mongoMIRoleDefinitions/00000000-0000-0000-0000-000000000003
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/mongoMIRoleDefinitions/00000000-0000-0000-0000-000000000004
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/tableRoleAssignments/8a463205-a8cc-40cf-a481-e80ac4796f3b
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/tableRoleDefinitions/00000000-0000-0000-0000-000000000001
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.DocumentDb/databaseAccounts/cosmos-agentic-joel-dev/tableRoleDefinitions/00000000-0000-0000-0000-000000000002
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/administrators/ActiveDirectory
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advancedThreatProtectionSettings/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advisors/CreateIndex
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advisors/DbParameterization
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advisors/DefragmentIndex
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advisors/DropIndex
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/advisors/ForceLastGoodPlan
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/auditingPolicies/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/auditingSettings/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/azureADOnlyAuthentications/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/connectionPolicies/default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/advancedThreatProtectionSettings/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/auditingPolicies/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/auditingSettings/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/backupLongTermRetentionPolicies/default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/backupShortTermRetentionPolicies/default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/geoBackupPolicies/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/ledgerDigestUploads/Current
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/securityAlertPolicies/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/transparentDataEncryption/Current
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/databases/agentic-data-db/vulnerabilityAssessments/Default
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/keys/ServiceManaged
+- /subscriptions/67d308ef-c547-46ab-8d31-5020c4d3eba2/resourceGroups/AI-103-Study-Lab/providers/Microsoft.Sql/servers/sql-agentic-joel-dev/sqlVulnerabilityAssessments/Default

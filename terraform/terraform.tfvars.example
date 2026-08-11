@@ -1,0 +1,5 @@
+# Copy this file to terraform.tfvars and supply real values.
+# terraform.tfvars is excluded from version control — never commit real subscription IDs
+# to this file (they are identifiers, not secrets, but keeping them out of VCS is good practice).
+
+subscription_id = "your-azure-subscription-id"
